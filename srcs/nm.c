@@ -155,6 +155,28 @@ static void	push_back_unit_list(
 	}
 }
 
+// 与えられた t_symbol_unit 構造体から個々のシンボル情報を抜き出す
+void	exrtact_symbols(const t_symbol_unit* unit) {
+	DEBUGOUT("unit: %p", unit);
+	const t_symbol_table*	symtable = &unit->symbol_table;
+	const t_string_table*	strtable = &unit->string_table;
+	const t_elf_64_symbol*	symbol = symtable->head;
+	for (size_t i = 0; i < symtable->num_entries; ++i) {
+		unsigned char st_info = symbol->st_info;
+		unsigned int binding = ELF64_ST_BIND(st_info);
+		unsigned int type = ELF64_ST_TYPE(st_info);
+		const size_t name_offset = symbol->st_name;
+		const char*	name = strtable->head + name_offset;
+		DEBUGINFO("sym[%zu] binding: %s", i, symbinding_to_name(binding));
+		DEBUGINFO("sym[%zu] type:    %s", i, symtype_to_name(type));
+		DEBUGINFO("sym[%zu]->st_name: %zu", i, name_offset);
+		DEBUGINFO("sym[%zu]->st_value: %p", i, symbol->st_value);
+		DEBUGINFO("sym[%zu]->st_size: %zu", i, symbol->st_size);
+		DEBUGINFO("name[%zu]: \"%s\"", i, name);
+		symbol = (void*)symbol + symtable->entry_size;
+	}
+}
+
 // t_symbol_unit 構造体のリストを破壊する
 void	destroy_unit_list(t_symbol_unit* symbols) {
 	t_symbol_unit*	unit = symbols;
@@ -185,7 +207,11 @@ void	analyze_section_headers(t_master* m) {
 		return;
 	}
 
-	// セクションヘッダーテーブルのエントリーを1つずつ見ていく
+	// セクションヘッダーテーブルのエントリーを1つずつ見ていき,
+	// シンボルテーブル(と対応する文字列テーブル)からなるリストを構成する.
+
+	// シンボルの総数
+	size_t	total_symbols = 0;
 	for (size_t i = 0; i < section_header_num; ++i) {
 		switch (section_header->sh_type) {
 			case SHT_SYMTAB:
@@ -199,10 +225,22 @@ void	analyze_section_headers(t_master* m) {
 					exit(1);
 				}
 				push_back_unit_list(m, section_header_table, i);
+				YOYO_ASSERT(analysis->symbols_tail != NULL);
+				total_symbols += analysis->symbols_tail->symbol_table.num_entries;
 				// analyze_symbol_table_section(elf_header, section_header, section_header->sh_size);
 				break;
 		}
 		section_header = (void*)section_header + section_header_size;
+	}
+	DEBUGWARN("total_symbols: %zu", total_symbols);
+
+	// 構成されたシンボルテーブルのリストをスキャンし, 「シンボルの配列」を作成する.
+	{
+		t_symbol_unit*	head = analysis->symbols;
+		while (head != NULL) {
+			exrtact_symbols(head);
+			head = head->next;
+		}
 	}
 
 
