@@ -4,12 +4,15 @@ INCDIR	:=	includes
 FILES	:=	\
 			main.c\
 			file.c\
-			nm.c\
+			structure_mapping.c\
+			analysis.c\
+			analysis_header.c\
 			print_utils.c\
 			basic_utils.c\
 			names.c\
 			printf.c\
 			assert.c\
+			# nm.c\
 
 
 SRCS	:=	$(FILES:%.c=$(SRCDIR)/%.c)

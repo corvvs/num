@@ -11,8 +11,8 @@ const char* elfclass_to_name(int value) {
 }
 
 const char* sectiontype_to_name(int value) {
-	static const char* names[] = (const char* []){"SHT_DYNAMIC", "SHT_DYNSYM", "SHT_FINI_ARRAY", "SHT_HASH", "SHT_HIPROC", "SHT_HIUSER", "SHT_INIT_ARRAY", "SHT_LOPROC", "SHT_LOUSER", "SHT_NOBITS", "SHT_NOTE", "SHT_NULL", "SHT_PREINIT_ARRAY", "SHT_PROGBITS", "SHT_REL", "SHT_RELA", "SHT_SHLIB", "SHT_STRTAB", "SHT_SYMTAB"};
-	static const int values[] = (int []){ SHT_DYNAMIC, SHT_DYNSYM, SHT_FINI_ARRAY, SHT_HASH, SHT_HIPROC, SHT_HIUSER, SHT_INIT_ARRAY, SHT_LOPROC, SHT_LOUSER, SHT_NOBITS, SHT_NOTE, SHT_NULL, SHT_PREINIT_ARRAY, SHT_PROGBITS, SHT_REL, SHT_RELA, SHT_SHLIB, SHT_STRTAB, SHT_SYMTAB };
+	static const char* names[] = (const char* []){"SHT_DYNAMIC", "SHT_DYNSYM", "SHT_FINI_ARRAY", "SHT_HASH", "SHT_HIPROC", "SHT_HIUSER", "SHT_INIT_ARRAY", "SHT_LOPROC", "SHT_LOUSER", "SHT_NOBITS", "SHT_NOTE", "SHT_NULL", "SHT_PREINIT_ARRAY", "SHT_PROGBITS", "SHT_REL", "SHT_RELA", "SHT_SHLIB", "SHT_STRTAB", "SHT_SYMTAB", "SHT_GNU_verdef", "SHT_GNU_verneed", "SHT_GNU_versym"};
+	static const int values[] = (int []){ SHT_DYNAMIC, SHT_DYNSYM, SHT_FINI_ARRAY, SHT_HASH, SHT_HIPROC, SHT_HIUSER, SHT_INIT_ARRAY, SHT_LOPROC, SHT_LOUSER, SHT_NOBITS, SHT_NOTE, SHT_NULL, SHT_PREINIT_ARRAY, SHT_PROGBITS, SHT_REL, SHT_RELA, SHT_SHLIB, SHT_STRTAB, SHT_SYMTAB, SHT_GNU_verdef, SHT_GNU_verneed, SHT_GNU_versym };
 	for (size_t i = 0; i < sizeof(names) / sizeof(char *); ++i) { if (value == values[i]) { return names[i]; } }
 	return "UNKNOWN";
 }
