@@ -46,10 +46,43 @@ void	extract_sections(t_master* m, t_analysis* analysis, const void* section_hea
 
 		current_header += analysis->header.shentsize;
 	}
+
+	// セクション名文字列テーブルを使ってセクション名をセットする
+	for (size_t i = 0; i < analysis->num_section; ++i) {
+		t_section_unit*	section = &analysis->sections[i];
+		if (analysis->found_section_name_str_table) {
+			section->name = analysis->sections[analysis->section_name_str_table_index].head + section->name_offset;
+		} else {
+			section->name = NULL;
+		}
+		determine_section_category(m, analysis, section);
+		DEBUGINFO("section: %zu -> %s\t%s\t%c%c%c%c%c%c%c%c%c%c%c%c%c%c %b\t%s",
+			i,
+			sectiontype_to_name(section->type),
+			section_category_to_name(section->category),
+			(section->flags & SHF_WRITE)			? 'w' : '-',
+			(section->flags & SHF_ALLOC)			? 'a' : '-',
+			(section->flags & SHF_EXECINSTR)		? 'x' : '-',
+			(section->flags & SHF_MERGE)			? 'm' : '-',
+			(section->flags & SHF_STRINGS)			? 's' : '-',
+			(section->flags & SHF_INFO_LINK)		? 'i' : '-',
+			(section->flags & SHF_LINK_ORDER)		? 'l' : '-',
+			(section->flags & SHF_OS_NONCONFORMING)	? 'o' : '-',
+			(section->flags & SHF_GROUP)			? 'g' : '-',
+			(section->flags & SHF_TLS)				? 't' : '-',
+			(section->flags & SHF_MASKOS)			? 'k' : '-',
+			(section->flags & SHF_ORDERED)			? 'r' : '-',
+			(section->flags & SHF_EXCLUDE)			? 'e' : '-',
+			(section->flags & SHF_MASKPROC)			? 'p' : '-',
+			section->flags,
+			section->name
+		);
+	}
 }
 
 void extract_symbol_tables(t_analysis* analysis) {
 	size_t	i_symbol_table = 0;
+	analysis->num_symbol = 0;
 	for (size_t i = 0; i < analysis->num_section; ++i) {
 		t_section_unit*	section = &analysis->sections[i];
 		switch (section->type) {
@@ -71,29 +104,36 @@ void extract_symbol_tables(t_analysis* analysis) {
 }
 
 void	extract_symbols(t_master* m, t_analysis* analysis) {
+	analysis->num_symbol_effective = 0;
 	size_t i_symbol = 0;
 	for (size_t i_symbol_table = 0; i_symbol_table < analysis->num_symbol_table; ++i_symbol_table) {
 		t_symbol_list_node*	node = &analysis->symbol_tables[i_symbol_table];
 		t_symbol_table_unit* symbol_table = &node->symbol_table;
 		t_string_table_unit* string_table = &node->string_table;
+		DEBUGINFO("symbol table: %zu: %s %s",
+			i_symbol_table,
+			sectiontype_to_name(symbol_table->section->type),
+			symbol_table->section->name);
+		if (symbol_table->section->type != SHT_SYMTAB) { continue; }
 		void*	current_symbol = symbol_table->head;
 		for (size_t k = 0; k < node->symbol_table.num_entries; ++k, ++i_symbol) {
-			t_symbol_unit*	symbol = &analysis->symbols[i_symbol];
+			t_symbol_unit*	symbol_unit = &analysis->symbols[i_symbol];
 			switch (analysis->category) {
 				case TC_ELF32:
-					map_elf32_symbol(current_symbol, string_table, symbol);
+					map_elf32_symbol(current_symbol, string_table, symbol_unit);
 					break;
 				case TC_ELF64:
-					map_elf64_symbol(current_symbol, string_table, symbol);
+					map_elf64_symbol(current_symbol, string_table, symbol_unit);
 					break;
 				default:
 					// 何かがおかしい
 					print_error_by_message(m, "SOMETHING WRONG");
 					break;
 			}
-
+			// シンボルグリフを決定する
+			determine_symbol_griff(m, analysis, symbol_unit);
 			current_symbol += symbol_table->entry_size;
-
+			analysis->num_symbol_effective += 1;
 		}
 	}
 }
@@ -139,12 +179,53 @@ void	quicksort_symbols(t_symbol_unit** list, size_t n) {
 }
 
 void	sort_symbols(t_master* m, t_analysis* analysis) {
-	for (size_t i = 0; i < analysis->num_symbol; ++i) {
+	for (size_t i = 0; i < analysis->num_symbol_effective; ++i) {
 		analysis->sorted_symbols[i] = &analysis->symbols[i];
 	}
 	(void)m;
 	// analysis->sorted_symbols の中身を address で昇順にソートする
-	quicksort_symbols(analysis->sorted_symbols, analysis->num_symbol);
+	quicksort_symbols(analysis->sorted_symbols, analysis->num_symbol_effective);
+}
+
+void	destroy_analysis(t_analysis* analysis) {
+	free(analysis->sections);
+	free(analysis->symbol_tables);
+	free(analysis->symbols);
+	free(analysis->sorted_symbols);
+	destroy_target_file(&analysis->target);
+}
+
+static bool	should_print_address(const t_symbol_unit* symbol) {
+	return symbol->shndx != SHN_UNDEF;
+}
+
+void	print_symbols(const t_analysis* analysis) {
+	const size_t	addr_width = 16;
+	for (size_t i = 0; i < analysis->num_symbol_effective; ++i) {
+		t_symbol_unit*	symbol = analysis->sorted_symbols[i];
+
+		// [アドレスの表示]
+		if (!should_print_address(symbol)) {
+			print_spaces(STDOUT_FILENO, addr_width);
+		} else {
+			uint32_t	width = number_width(symbol->address, 16);
+			if (width < addr_width) {
+				print_chars(STDOUT_FILENO, '0', addr_width - width);
+			}
+			yoyo_dprintf(STDOUT_FILENO, "%x", symbol->address);
+		}
+		// [グリフの表示]
+		yoyo_dprintf(STDOUT_FILENO, " %c ", symbol->symbol_griff);
+		// [名前の表示]
+		yoyo_dprintf(STDOUT_FILENO, "%s", symbol->name);
+
+		// 追加情報
+		// {
+		// 	yoyo_dprintf(STDOUT_FILENO, " | %s | %s | %zu", symbinding_to_name(symbol->bind), symtype_to_name(symbol->type), symbol->shndx);
+		// }
+
+		yoyo_dprintf(STDOUT_FILENO, "\n", symbol->name);
+	}
 }
 
 bool	analyze_file(t_master* m, const char* target_path) {
@@ -166,7 +247,6 @@ bool	analyze_file(t_master* m, const char* target_path) {
 	// [セクションヘッダーテーブルを見る]
 	void* current_header = analysis->target.head + analysis->header.shoff;
 	const void* section_header_table = current_header;
-	(void)section_header_table;
 	size_t shsize = analysis->header.shnum * analysis->header.shentsize;
 	YOYO_ASSERT(analysis->header.shoff + shsize <= analysis->target.size);
 
@@ -175,7 +255,6 @@ bool	analyze_file(t_master* m, const char* target_path) {
 	analysis->sections = malloc(sizeof(t_section_unit) * analysis->num_section);
 	YOYO_ASSERT(analysis->sections != NULL);
 	analysis->num_symbol_table = 0;
-
 	extract_sections(m, analysis, section_header_table);
 
 	// シンボルユニット配列を用意する
@@ -184,7 +263,6 @@ bool	analyze_file(t_master* m, const char* target_path) {
 	YOYO_ASSERT(analysis->symbol_tables != NULL);
 	
 	// [シンボルテーブルがあったら, 対応する文字列テーブルとペアにして配列に入れていく]
-	analysis->num_symbol = 0;
 	extract_symbol_tables(analysis);
 
 	// [シンボルを配列化する]
@@ -200,33 +278,8 @@ bool	analyze_file(t_master* m, const char* target_path) {
 	sort_symbols(m, analysis);
 
 	// [表示]
-	const size_t	addr_width = 16;
-	for (size_t i = 0; i < analysis->num_symbol; ++i) {
-		t_symbol_unit*	symbol = analysis->sorted_symbols[i];
+	print_symbols(analysis);
 
-		// [アドレスの表示]
-		if (symbol->address == 0) {
-			print_spaces(STDOUT_FILENO, addr_width);
-		} else {
-			uint32_t	width = number_width(symbol->address, 16);
-			if (width < addr_width) {
-				print_chars(STDOUT_FILENO, '0', addr_width - width);
-			}
-			yoyo_dprintf(STDOUT_FILENO, "%x", symbol->address);
-		}
-		// [グリフの表示]
-		yoyo_dprintf(STDOUT_FILENO, " %c ", symbol->symbol_griff);
-		// [名前の表示]
-		yoyo_dprintf(STDOUT_FILENO, "%s\n", symbol->name);
-	}
-
-
-	free(analysis->sections);
-	free(analysis->symbol_tables);
-	free(analysis->symbols);
-	free(analysis->sorted_symbols);
-
-	destroy_target_file(target);
-
+	destroy_analysis(analysis);
 	return true;
 }

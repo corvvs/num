@@ -30,3 +30,10 @@ const char* symtype_to_name(int value) {
 	for (size_t i = 0; i < sizeof(names) / sizeof(char *); ++i) { if (value == values[i]) { return names[i]; } }
 	return "UNKNOWN";
 }
+
+const char* section_category_to_name(uint64_t value) {
+	static const char* names[] = (const char* []){"SC_SYM_ABS", "SC_SYM_COMMON", "SC_SYM_UNDEF", "SC_GOT", "SC_DATA", "SC_READONLY", "SC_SMALL", "SC_TEXT", "SC_BSS", "SC_UNDEFINED", "SC_OTHER"};
+	static const uint64_t values[] = (uint64_t []){ SC_SYM_ABS, SC_SYM_COMMON, SC_SYM_UNDEF, SC_GOT, SC_DATA, SC_READONLY, SC_SMALL, SC_TEXT, SC_BSS, SC_UNDEFINED, SC_OTHER };
+	for (size_t i = 0; i < sizeof(names) / sizeof(char *); ++i) { if (value == values[i]) { return names[i]; } }
+	return "UNKNOWN";
+}

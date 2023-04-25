@@ -41,6 +41,10 @@ bool	analyze_file(t_master* m, const char* target_path);
 // analysis_header.c
 bool	analyze_header(t_analysis* analysis);
 
+// symbol.c
+void	determine_section_category(const t_master* m, const t_analysis* analysis, t_section_unit* section);
+void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_symbol_unit* symbol);
+
 // basic_utils.c
 char*	yo_basename(const char* path);
 
@@ -59,6 +63,7 @@ const char*	elfclass_to_name(int value);
 const char*	sectiontype_to_name(int value);
 const char*	symbinding_to_name(int value);
 const char*	symtype_to_name(int value);
+const char* section_category_to_name(uint64_t value);
 
 // assert.c
 void	yoyo_assert(const char* strexp, bool exp, const char* file, unsigned int line, const char* func);

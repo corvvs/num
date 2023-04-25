@@ -53,6 +53,7 @@ void	map_elf64_symbol(const t_elf_64_symbol* defined, const t_string_table_unit*
 
 	original->bind = ELF64_ST_BIND(defined->st_info);
 	original->type = ELF64_ST_TYPE(defined->st_info);
+	original->info = defined->st_info;
 	original->shndx = defined->st_shndx;
 	original->value = defined->st_value;
 	original->size = defined->st_size;
@@ -71,6 +72,7 @@ void	map_elf32_symbol(const t_elf_32_symbol* defined, const t_string_table_unit*
 
 	original->bind = ELF32_ST_BIND(defined->st_info);
 	original->type = ELF32_ST_TYPE(defined->st_info);
+	original->info = defined->st_info;
 	original->shndx = defined->st_shndx;
 	original->value = defined->st_value;
 	original->size = defined->st_size;
@@ -82,6 +84,7 @@ void	map_elf32_symbol(const t_elf_32_symbol* defined, const t_string_table_unit*
 
 // セクションユニット構造体をシンボルテーブル構造体にマップする
 void	map_section_to_symbol_table(const t_section_unit* section, t_symbol_table_unit* table) {
+	table->section = section;
 	table->head = section->head;
 	table->offset = section->offset;
 	table->entry_size = section->entsize;
@@ -95,6 +98,7 @@ void	map_section_to_symbol_table(const t_section_unit* section, t_symbol_table_u
 
 // セクションユニット構造体を文字列テーブル構造体にマップする
 void	map_section_to_string_table(const t_section_unit* section, t_string_table_unit* table) {
+	table->section = section;
 	table->head = section->head;
 	table->offset = section->offset;
 	table->total_size = section->size;

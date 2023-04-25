@@ -22,6 +22,30 @@ typedef enum e_target_category
 	TC_ELF64,
 } t_target_category;
 
+typedef enum e_section_category {
+	// 絶対シンボル
+	SC_SYM_ABS,
+	// コモン or BSSシンボル
+	SC_SYM_COMMON,
+	// 未定義シンボル
+	SC_SYM_UNDEF,
+	// gotセクション
+	SC_GOT,
+	// データセクション
+	SC_DATA,
+	// 読み取り専用セクション
+	SC_READONLY,
+	// スモールオブジェクトセクション
+	SC_SMALL,
+	// テキストセクション
+	SC_TEXT,
+	// BSSセクション
+	SC_BSS,
+	// 未定義セクション
+	SC_UNDEFINED,
+	SC_OTHER,
+}	t_section_category;
+
 typedef struct s_symbol_unit {
 	size_t		address;      // シンボルのアドレス
 	char		symbol_griff; // シンボルグリフ
@@ -30,6 +54,7 @@ typedef struct s_symbol_unit {
 
 	uint64_t	bind;
 	uint64_t	type;
+	unsigned char	info;
 	size_t		shndx;
 	uint64_t	value;
 	uint64_t	size;
@@ -40,9 +65,26 @@ typedef struct s_symbol_unit {
 } t_symbol_unit;
 
 // (32/64ビット共通)
+// セクションヘッダから抽出したセクションの情報
+typedef struct s_section_unit {
+	const char*	name; // セクション名; 文字列テーブル上のある位置を指す
+	size_t		name_offset; // セクション名の文字列テーブルオフセット
+	uint64_t	type; // タイプ
+	uint64_t	flags; // フラグ
+	uint64_t	link; // リンク先
+	void*		head; // セクションのメモリマップアドレス
+	size_t		offset; // セクションのファイルオフセット
+	size_t		entsize; // エントリーサイズ
+	size_t		size; // セクションのサイズ
+
+	t_section_category category;
+} t_section_unit;
+
+// (32/64ビット共通)
 // シンボルテーブルの情報を人間(おれ)に優しく整理したもの
 typedef struct s_symbol_table_unit
 {
+	const t_section_unit*	section;
 	// 実際のシンボルテーブルの先頭アドレス
 	void *head;
 	// ELFファイル先頭からのオフセット
@@ -59,6 +101,7 @@ typedef struct s_symbol_table_unit
 // 文字列テーブルの情報を人間(おれ)に優しく整理したもの
 typedef struct s_string_table_unit
 {
+	const t_section_unit*	section;
 	// 実際の文字列テーブルの先頭アドレス
 	void *head;
 	// ELFファイル先頭からのオフセット
@@ -76,22 +119,6 @@ typedef struct s_symbol_list_node
 	t_string_table_unit string_table;
 	struct s_symbol_list_node *next;
 } t_symbol_list_node;
-
-// (32/64ビット共通)
-// セクションヘッダから抽出したセクションの情報
-typedef struct s_section_unit {
-	const char*	name; // セクション名; 文字列テーブル上のある位置を指す
-	size_t		name_offset; // セクション名の文字列テーブルオフセット
-	uint64_t	type; // タイプ
-	uint64_t	flags; // フラグ
-	uint64_t	link; // リンク先
-	void*		head; // セクションのメモリマップアドレス
-	size_t		offset; // セクションのファイルオフセット
-	size_t		entsize; // エントリーサイズ
-	size_t		size; // セクションのサイズ
-} t_section_unit;
-
-
 
 typedef struct s_object_header {
 	size_t	hsize;     // ヘッダのサイズ
@@ -126,7 +153,8 @@ typedef struct s_analysis
 	size_t				num_symbol_table;
 	t_symbol_list_node*	symbol_tables; // シンボルテーブルの配列
 
-	size_t			num_symbol;  // このファイルに存在するであろうシンボルの総数
+	size_t			num_symbol;           // このファイルに存在するであろうシンボルの総数
+	size_t			num_symbol_effective; // ↑ のうち, 表示対象となるシンボルの数
 	t_symbol_unit*	symbols;     // シンボル構造体の配列; 要素数は num_symbol に等しい
 	t_symbol_unit**	sorted_symbols; // ソート後の symbols; ポインタの配列であることに注意
 

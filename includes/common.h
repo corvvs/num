@@ -55,4 +55,11 @@
 
 # define MAX(a, b) (a > b ? a : b)
 
+// flags で指定されたフラグが**すべて**立っているかどうか
+# define FLAG_ALL(value, flags) (((value) & (flags)) == (flags))
+// flags で指定されたフラグが**1つでも**立っているかどうか
+# define FLAG_ANY(value, flags) (!!(valu(value) & (flags)))
+// flags で指定されたフラグ**すべてが立っていない**かどうか
+# define FLAG_NONE(value, flags) (!FLAG_ANY(value, flags))
+
 #endif

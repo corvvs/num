@@ -7,6 +7,7 @@ FILES	:=	\
 			structure_mapping.c\
 			analysis.c\
 			analysis_header.c\
+			symbol.c\
 			print_utils.c\
 			basic_utils.c\
 			names.c\
