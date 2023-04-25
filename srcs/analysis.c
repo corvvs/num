@@ -91,7 +91,7 @@ void extract_symbol_tables(t_analysis* analysis) {
 				size_t	string_table_index = section->link;
 				YOYO_ASSERT(string_table_index < analysis->num_section);
 				t_section_unit*	strtab_section = &analysis->sections[string_table_index];
-				t_symbol_list_node* symbol_pair = &analysis->symbol_tables[i_symbol_table];
+				t_table_pair* symbol_pair = &analysis->symbol_tables[i_symbol_table];
 
 				// [シンボルテーブルと文字列テーブルをペアにする]
 				map_section_to_symbol_table(section, &symbol_pair->symbol_table);
@@ -107,7 +107,7 @@ void	extract_symbols(t_master* m, t_analysis* analysis) {
 	analysis->num_symbol_effective = 0;
 	size_t i_symbol = 0;
 	for (size_t i_symbol_table = 0; i_symbol_table < analysis->num_symbol_table; ++i_symbol_table) {
-		t_symbol_list_node*	node = &analysis->symbol_tables[i_symbol_table];
+		t_table_pair*	node = &analysis->symbol_tables[i_symbol_table];
 		t_symbol_table_unit* symbol_table = &node->symbol_table;
 		t_string_table_unit* string_table = &node->string_table;
 		DEBUGINFO("symbol table: %zu: %s %s",
@@ -130,6 +130,9 @@ void	extract_symbols(t_master* m, t_analysis* analysis) {
 					print_error_by_message(m, "SOMETHING WRONG");
 					break;
 			}
+			// シンボル名をセットする
+			determine_symbol_name(m, analysis, node, symbol_unit);
+
 			// シンボルグリフを決定する
 			determine_symbol_griff(m, analysis, symbol_unit);
 			current_symbol += symbol_table->entry_size;
@@ -259,7 +262,7 @@ bool	analyze_file(t_master* m, const char* target_path) {
 
 	// シンボルユニット配列を用意する
 	YOYO_ASSERT(analysis->num_symbol_table > 0);
-	analysis->symbol_tables = malloc(sizeof(t_symbol_list_node) * analysis->num_symbol_table);
+	analysis->symbol_tables = malloc(sizeof(t_table_pair) * analysis->num_symbol_table);
 	YOYO_ASSERT(analysis->symbol_tables != NULL);
 	
 	// [シンボルテーブルがあったら, 対応する文字列テーブルとペアにして配列に入れていく]

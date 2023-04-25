@@ -118,7 +118,7 @@ typedef struct s_symbol_list_node
 	t_symbol_table_unit symbol_table;
 	t_string_table_unit string_table;
 	struct s_symbol_list_node *next;
-} t_symbol_list_node;
+} t_table_pair;
 
 typedef struct s_object_header {
 	size_t	hsize;     // ヘッダのサイズ
@@ -151,7 +151,7 @@ typedef struct s_analysis
 	t_section_unit*	sections;    // セクション構造体の配列; 要素数は num_section に等しい
 	
 	size_t				num_symbol_table;
-	t_symbol_list_node*	symbol_tables; // シンボルテーブルの配列
+	t_table_pair*	symbol_tables; // シンボルテーブルの配列
 
 	size_t			num_symbol;           // このファイルに存在するであろうシンボルの総数
 	size_t			num_symbol_effective; // ↑ のうち, 表示対象となるシンボルの数

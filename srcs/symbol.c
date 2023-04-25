@@ -79,6 +79,25 @@ const t_section_unit*	get_referencing_section(const t_master* m, const t_analysi
 	return NULL;
 }
 
+// シンボルの名前 name を決定する
+void	determine_symbol_name(
+	const t_master* m,
+	const t_analysis* analysis,
+	const t_table_pair* table_pair,
+	t_symbol_unit* symbol
+) {
+	(void)m;
+	if (symbol->type == STT_SECTION) {
+		// セクションシンボル
+		const t_section_unit* section = &analysis->sections[symbol->shndx];
+		symbol->name = section->name;
+		return;
+	} else {
+		const t_string_table_unit* string_table = &table_pair->string_table;
+		symbol->name = string_table->head + symbol->name_offset;
+	}
+}
+
 // グローバルなデバッグ情報シンボル
 // ローカルなデバッグ情報シンボル
 // スタックまたはその他の未定義セクションシンボル
@@ -94,7 +113,7 @@ void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_sym
 
 	const t_section_unit*	referencing_section = get_referencing_section(m, analysis, symbol);
 
-	DEBUGOUT("|%s| bind:%s type:%s section-cat:%s shndx:%zu %llu %llu %u addr: %p value: %llu size: %llu",
+	DEBUGOUT("|%s| bind:%s type:%s section-cat:%s shndx:%zu %llu %llu %u addr: %p value: %llx size: %llu",
 		symbol->name,
 		symbinding_to_name(symbol->bind),
 		symtype_to_name(symbol->type),

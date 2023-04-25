@@ -43,6 +43,7 @@ bool	analyze_header(t_analysis* analysis);
 
 // symbol.c
 void	determine_section_category(const t_master* m, const t_analysis* analysis, t_section_unit* section);
+void	determine_symbol_name(const t_master* m, const t_analysis* analysis, const t_table_pair* table_pair, t_symbol_unit* symbol);
 void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_symbol_unit* symbol);
 
 // basic_utils.c
