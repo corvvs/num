@@ -155,11 +155,17 @@ int		compare_by_address(const t_symbol_unit* a, const t_symbol_unit* b) {
 	return 0;
 }
 
-int		compare_by_name(const t_symbol_unit* a, const t_symbol_unit* b) {
-	return ft_strcmp(a->name, b->name);
+int		compare_by_name(const t_symbol_unit* a, const t_symbol_unit* b, bool rev) {
+	int rv = ft_strcmp(a->name, b->name);
+	return rev ? -rv : rv;
 }
 
-void	quicksort_symbols(t_symbol_unit** list, size_t n) {
+void	quicksort_symbols(
+	const t_master* m,
+	t_symbol_unit** list,
+	size_t n,
+	int (*compare)(const t_symbol_unit*, const t_symbol_unit*, bool rev)
+) {
 	if (n <= 1) {
 		return;
 	}
@@ -167,10 +173,10 @@ void	quicksort_symbols(t_symbol_unit** list, size_t n) {
 	size_t	j = n - 1;
 	t_symbol_unit*	pivot = list[n / 2];
 	while (i <= j) {
-		while (compare_by_name(list[i], pivot) < 0) {
+		while (compare(list[i], pivot, m->option.reversed) < 0) {
 			i += 1;
 		}
-		while (compare_by_name(list[j], pivot) > 0) {
+		while (compare(list[j], pivot, m->option.reversed) > 0) {
 			j -= 1;
 		}
 		if (i <= j) {
@@ -181,17 +187,16 @@ void	quicksort_symbols(t_symbol_unit** list, size_t n) {
 			j -= 1;
 		}
 	}
-	quicksort_symbols(list, j + 1);
-	quicksort_symbols(list + i, n - i);
+	quicksort_symbols(m, list, j + 1, compare);
+	quicksort_symbols(m, list + i, n - i, compare);
 }
 
-void	sort_symbols(t_master* m, t_analysis* analysis) {
+void	sort_symbols(const t_master* m, t_analysis* analysis) {
 	for (size_t i = 0; i < analysis->num_symbol_effective; ++i) {
 		analysis->sorted_symbols[i] = &analysis->symbols[i];
 	}
-	(void)m;
 	// analysis->sorted_symbols の中身を address で昇順にソートする
-	quicksort_symbols(analysis->sorted_symbols, analysis->num_symbol_effective);
+	quicksort_symbols(m, analysis->sorted_symbols, analysis->num_symbol_effective, compare_by_name);
 }
 
 void	destroy_analysis(t_analysis* analysis) {

@@ -20,6 +20,8 @@ void	parse_option(t_master* m, int argc, char **argv) {
 				m->option.display_only_external = true;
 			} else if (arg[j] == 'u') {
 				m->option.display_only_undefined = true;
+			} else if (arg[j] == 'r') {
+				m->option.reversed = true;
 			} else {
 				// TODO: invalid option
 				break;
