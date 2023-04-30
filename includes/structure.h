@@ -44,10 +44,16 @@ typedef enum e_section_category {
 	SC_TEXT,
 	// BSSセクション
 	SC_BSS,
+	// 
+	SC_MERGEABLE_CHARACTER,
+	// デバッグセクション
+	SC_DEBUG,
 	// 未定義セクション
 	SC_UNDEFINED,
 	SC_OTHER,
 }	t_section_category;
+
+# define SYMGRIFF_UNKNOWN '?'
 
 typedef struct s_symbol_unit {
 	size_t		address;      // シンボルのアドレス
@@ -81,6 +87,7 @@ typedef struct s_section_unit {
 	size_t		offset; // セクションのファイルオフセット
 	size_t		entsize; // エントリーサイズ
 	size_t		size; // セクションのサイズ
+	uint64_t	info;
 
 	t_section_category category;
 } t_section_unit;

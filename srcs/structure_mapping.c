@@ -30,6 +30,7 @@ void	map_elf64_section_header(const t_elf_64_section_header* defined, t_section_
 	original->offset = defined->sh_offset;
 	original->entsize = defined->sh_entsize;
 	original->size = defined->sh_size;
+	original->info = defined->sh_info;
 }
 
 // ELF32セクションヘッダ構造体をセクション構造体にマップする
@@ -42,6 +43,7 @@ void	map_elf32_section_header(const t_elf_32_section_header* defined, t_section_
 	original->offset = defined->sh_offset;
 	original->entsize = defined->sh_entsize;
 	original->size = defined->sh_size;
+	original->info = defined->sh_info;
 }
 
 const t_section_unit*	get_referencing_section(const t_master* m, const t_analysis* analysis, const t_symbol_unit* symbol) {
@@ -71,7 +73,7 @@ void	map_elf64_symbol(const t_elf_64_symbol* defined, t_symbol_unit* original) {
 	original->address = defined->st_value;
 	original->name = NULL;
 	original->name_offset = defined->st_name;
-	original->symbol_griff = '?';
+	original->symbol_griff = SYMGRIFF_UNKNOWN;
 
 	original->bind = ELF64_ST_BIND(defined->st_info);
 	original->type = ELF64_ST_TYPE(defined->st_info);
@@ -90,7 +92,7 @@ void	map_elf32_symbol(const t_elf_32_symbol* defined, t_symbol_unit* original) {
 	original->address = defined->st_value;
 	original->name = NULL;
 	original->name_offset = defined->st_name;
-	original->symbol_griff = '?';
+	original->symbol_griff = SYMGRIFF_UNKNOWN;
 
 	original->bind = ELF32_ST_BIND(defined->st_info);
 	original->type = ELF32_ST_TYPE(defined->st_info);

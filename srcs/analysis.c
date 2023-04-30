@@ -56,11 +56,12 @@ void	extract_sections(t_master* m, t_analysis* analysis, const void* section_hea
 			section->name = NULL;
 		}
 		determine_section_category(m, analysis, section);
-		DEBUGINFO("section: %zu(%zx) -> %s(%llx)\t%s\t%c%c%c%c%c%c%c%c%c%c%c%c%c%c %b\t%s",
+		DEBUGINFO("section: %zu(%zx) -> %s(%llx)\t%s %llu\t%c%c%c%c%c%c%c%c%c%c%c%c%c%c %b\t%s",
 			i,
 			section->offset,
 			sectiontype_to_name(section->type), section->type,
 			section_category_to_name(section->category),
+			section->link,
 			(section->flags & SHF_WRITE)			? 'w' : '-',
 			(section->flags & SHF_ALLOC)			? 'a' : '-',
 			(section->flags & SHF_EXECINSTR)		? 'x' : '-',
@@ -205,10 +206,17 @@ static bool	should_print_address(const t_symbol_unit* symbol) {
 	return symbol->shndx != SHN_UNDEF;
 }
 
+static bool should_print_symbol(const t_symbol_unit* symbol) {
+	if (symbol->symbol_griff == 'U' && ft_strnlen(symbol->name, 1) == 0) { return false; }
+	if (symbol->name[0] == '$' && ft_strnlen(symbol->name, 3) == 2) { return false; }
+	return true;
+}
+
 void	print_symbols(const t_analysis* analysis) {
 	const size_t	addr_width = 16;
 	for (size_t i = 0; i < analysis->num_symbol_effective; ++i) {
 		t_symbol_unit*	symbol = analysis->sorted_symbols[i];
+		if (!should_print_symbol(symbol)) { continue; }
 
 		// [アドレスの表示]
 		if (!should_print_address(symbol)) {

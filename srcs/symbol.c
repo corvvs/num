@@ -15,7 +15,19 @@ void	determine_section_category(const t_master* m, const t_analysis* analysis, t
 		case SHT_INIT_ARRAY:
 		case SHT_FINI_ARRAY:
 		case SHT_NOTE:
+		case SHT_DYNAMIC:
+		case SHT_SYMTAB:
+		case SHT_DYNSYM:
+		case SHT_STRTAB:
+		case SHT_GNU_HASH:
+		case SHT_GNU_versym:
+		case SHT_GNU_verneed:
+		case SHT_RELA:
 		case SHT_PROGBITS: {
+			if (ft_strncmp(section->name, ".debug", 6) == 0) {
+				section->category = SC_DEBUG;
+				return;
+			}
 			// プログラムデータ（コードやデータなど）を格納するセクション
 			if (FLAG_ALL(section->flags, SHF_EXECINSTR | SHF_ALLOC)) {
 				// フラグがSHF_EXECINSTR | SHF_ALLOC → テキストセクション
@@ -40,6 +52,10 @@ void	determine_section_category(const t_master* m, const t_analysis* analysis, t
 			if (FLAG_ALL(section->flags, SHF_ALLOC)) {
 				// フラグがSHF_ALLOC → 読み取り専用データセクション
 				section->category = SC_READONLY;
+				return;
+			}
+			if (FLAG_ALL(section->flags, SHF_MERGE | SHF_STRINGS)) {
+				section->category = SC_MERGEABLE_CHARACTER;
 				return;
 			}
 			break;
@@ -88,10 +104,10 @@ void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_sym
 	(void)analysis;
 	(void)symbol;
 
-	DEBUGOUT("|%s| bind:%s type:%s section-cat:%s shndx:%zu %llu %llu %u addr: %p value: %llx size: %llu",
-		symbol->name,
+	DEBUGOUT("bind:%s\ttype:%s\t|%s|\tsection-cat:%s shndx:%zu %llu %llu %u addr: %p value: %llx size: %llu",
 		symbinding_to_name(symbol->bind),
 		symtype_to_name(symbol->type),
+		symbol->name,
 		symbol->relevant_section ? section_category_to_name(symbol->relevant_section->category) : NULL,
 		symbol->shndx,
 		symbol->bind,
@@ -102,18 +118,24 @@ void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_sym
 		symbol->size
 	);
 
+	// if (symbol->bind == STB_LOCAL && symbol->type == STT_NOTYPE) {
+	// 	// 表示しない？
+	// 	symbol->symbol_griff = SYMGRIFF_UNKNOWN;
+	// 	return;
+	// }
+
 	// [セクション]
 	if (symbol->type == STT_SECTION) {
 		const t_section_unit* section = &analysis->sections[symbol->shndx];
 		switch (section->category) {
-			case SC_TEXT: {
-				// テキストセクション
-				symbol->symbol_griff = 't';
-				return;
-			}
 			case SC_DATA: {
 				// データセクション
 				symbol->symbol_griff = 'd';
+				return;
+			}
+			case SC_TEXT: {
+				// テキストセクション
+				symbol->symbol_griff = 't';
 				return;
 			}
 			case SC_BSS: {
@@ -144,6 +166,14 @@ void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_sym
 			case SC_READONLY: {
 				// 読み取り専用データセクション
 				symbol->symbol_griff = 'r';
+				return;
+			}
+			case SC_DEBUG: {
+				symbol->symbol_griff = 'N';
+				return;
+			}
+			case SC_MERGEABLE_CHARACTER: {
+				symbol->symbol_griff = 'n';
 				return;
 			}
 			default:
@@ -315,6 +345,7 @@ void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_sym
 			}
 			break;
 		}
+		case STT_NOTYPE:
 		case STT_FUNC: {
 			if (symbol->relevant_section && symbol->relevant_section->category == SC_TEXT) {
 				switch (symbol->bind) {
@@ -328,9 +359,6 @@ void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_sym
 						return;
 				}
 			}
-			break;
-		}
-		case STT_NOTYPE: {
 			break;
 		}
 		default:
