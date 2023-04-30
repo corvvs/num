@@ -6,6 +6,9 @@
 # include <stdbool.h>
 # include <elf.h>
 
+// 事前宣言
+struct s_section_unit;
+
 // type alias
 typedef Elf64_Ehdr t_elf_64_header;
 typedef Elf64_Shdr t_elf_64_section_header;
@@ -62,6 +65,8 @@ typedef struct s_symbol_unit {
 	bool		is_debug;     // デバッグシンボルかどうか(-a)
 	bool		is_global;    // 外部シンボルかどうか(-g)
 	bool		is_undefined; // 未定義シンボルかどうか(-u)
+
+	const struct s_section_unit*	relevant_section;
 } t_symbol_unit;
 
 // (32/64ビット共通)

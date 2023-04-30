@@ -56,9 +56,10 @@ void	extract_sections(t_master* m, t_analysis* analysis, const void* section_hea
 			section->name = NULL;
 		}
 		determine_section_category(m, analysis, section);
-		DEBUGINFO("section: %zu -> %s\t%s\t%c%c%c%c%c%c%c%c%c%c%c%c%c%c %b\t%s",
+		DEBUGINFO("section: %zu(%zx) -> %s(%llx)\t%s\t%c%c%c%c%c%c%c%c%c%c%c%c%c%c %b\t%s",
 			i,
-			sectiontype_to_name(section->type),
+			section->offset,
+			sectiontype_to_name(section->type), section->type,
 			section_category_to_name(section->category),
 			(section->flags & SHF_WRITE)			? 'w' : '-',
 			(section->flags & SHF_ALLOC)			? 'a' : '-',
@@ -109,7 +110,6 @@ void	extract_symbols(t_master* m, t_analysis* analysis) {
 	for (size_t i_symbol_table = 0; i_symbol_table < analysis->num_symbol_table; ++i_symbol_table) {
 		t_table_pair*	node = &analysis->symbol_tables[i_symbol_table];
 		t_symbol_table_unit* symbol_table = &node->symbol_table;
-		t_string_table_unit* string_table = &node->string_table;
 		DEBUGINFO("symbol table: %zu: %s %s",
 			i_symbol_table,
 			sectiontype_to_name(symbol_table->section->type),
@@ -120,16 +120,19 @@ void	extract_symbols(t_master* m, t_analysis* analysis) {
 			t_symbol_unit*	symbol_unit = &analysis->symbols[i_symbol];
 			switch (analysis->category) {
 				case TC_ELF32:
-					map_elf32_symbol(current_symbol, string_table, symbol_unit);
+					map_elf32_symbol(current_symbol, symbol_unit);
 					break;
 				case TC_ELF64:
-					map_elf64_symbol(current_symbol, string_table, symbol_unit);
+					map_elf64_symbol(current_symbol, symbol_unit);
 					break;
 				default:
 					// 何かがおかしい
 					print_error_by_message(m, "SOMETHING WRONG");
 					break;
 			}
+
+			symbol_unit->relevant_section = get_referencing_section(m, analysis, symbol_unit);
+
 			// シンボル名をセットする
 			determine_symbol_name(m, analysis, node, symbol_unit);
 

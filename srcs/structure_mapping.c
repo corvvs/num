@@ -44,10 +44,32 @@ void	map_elf32_section_header(const t_elf_32_section_header* defined, t_section_
 	original->size = defined->sh_size;
 }
 
+const t_section_unit*	get_referencing_section(const t_master* m, const t_analysis* analysis, const t_symbol_unit* symbol) {
+	(void)m;
+	(void)analysis;
+	(void)symbol;
+
+	switch (symbol->shndx) {
+		case SHN_UNDEF:
+		case SHN_BEFORE:
+		case SHN_AFTER:
+		// case SHN_AMD64_LCOMMON:
+		// case SHN_SUNW_IGNORE:
+		case SHN_ABS:
+		case SHN_COMMON:
+		case SHN_XINDEX:
+			break;
+		default:
+			YOYO_ASSERT(symbol->shndx < analysis->num_section);
+			return &analysis->sections[symbol->shndx];
+	}
+	return NULL;
+}
+
 // ELF64シンボル構造体をシンボル構造体にマップする
-void	map_elf64_symbol(const t_elf_64_symbol* defined, const t_string_table_unit* string_table, t_symbol_unit* original) {
+void	map_elf64_symbol(const t_elf_64_symbol* defined, t_symbol_unit* original) {
 	original->address = defined->st_value;
-	original->name = string_table->head + defined->st_name;
+	original->name = NULL;
 	original->name_offset = defined->st_name;
 	original->symbol_griff = '?';
 
@@ -64,9 +86,9 @@ void	map_elf64_symbol(const t_elf_64_symbol* defined, const t_string_table_unit*
 }
 
 // ELF32シンボル構造体をシンボル構造体にマップする
-void	map_elf32_symbol(const t_elf_32_symbol* defined, const t_string_table_unit* string_table, t_symbol_unit* original) {
+void	map_elf32_symbol(const t_elf_32_symbol* defined, t_symbol_unit* original) {
 	original->address = defined->st_value;
-	original->name = string_table->head + defined->st_name;
+	original->name = NULL;
 	original->name_offset = defined->st_name;
 	original->symbol_griff = '?';
 
