@@ -177,7 +177,7 @@ typedef struct s_analysis
 } t_analysis;
 
 typedef struct s_option {
-
+	bool	display_all;
 } t_option;
 
 // プログラムの実行時の情報をすべて保持する構造体

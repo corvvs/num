@@ -8,6 +8,24 @@ static const char*	get_exec_name(char** argv) {
 #endif
 }
 
+void	parse_option(t_master* m, int argc, char **argv) {
+	int i;
+	for (i = 1; i < argc; ++i) {
+		const char* arg = argv[i];
+		if (!(arg[0] == '-' && arg[1])) { break; }
+		for (size_t j = 1; arg[j]; ++j) {
+			if (arg[j] == 'a') {
+				m->option.display_all = true;
+			} else {
+				// TODO: invalid option
+				break;
+			}
+		}
+	}
+	m->num_target = argc - i;
+	m->target_names = (const char**)(argv + i);
+}
+
 const char*	default_target = "a.out";
 
 int main(int argc, char** argv) {
@@ -16,23 +34,20 @@ int main(int argc, char** argv) {
 		print_error_by_errno();
 	}
 
-	// TODO: オプション解析
+	t_master	master = {
+		.exec_name = get_exec_name(argv),
+		.option = {0},
+	};
+
+	parse_option(&master, argc, argv);
 
 	// TODO: ファイルが指定されていない場合は a.out を対象とする
 	// TODO: マルチファイル対応
 
 	// [マスター構造体の初期化]
-	t_master	master = {
-		.exec_name = get_exec_name(argv),
-	};
 
 	// [対象ファイル名の設定]
-	if (argc >= 2) {
-		size_t arg_offset = 1;
-		// 対象ファイルが1つ以上与えられている場合
-		master.num_target = argc - arg_offset;
-		master.target_names = (const char**)(argv + arg_offset);
-	} else {
+	if (master.num_target < 1) {
 		master.num_target = 1;
 		master.target_names = &default_target;
 	}

@@ -207,6 +207,7 @@ static bool	should_print_address(const t_symbol_unit* symbol) {
 }
 
 static bool should_print_symbol(const t_symbol_unit* symbol) {
+	if (symbol->symbol_griff == SYMGRIFF_UNKNOWN) { return false; }
 	if (symbol->symbol_griff == 'U' && ft_strnlen(symbol->name, 1) == 0) { return false; }
 	if (symbol->name[0] == '$' && ft_strnlen(symbol->name, 3) == 2) { return false; }
 	return true;
