@@ -195,8 +195,9 @@ void	sort_symbols(const t_master* m, t_analysis* analysis) {
 	for (size_t i = 0; i < analysis->num_symbol_effective; ++i) {
 		analysis->sorted_symbols[i] = &analysis->symbols[i];
 	}
-	// analysis->sorted_symbols の中身を address で昇順にソートする
-	quicksort_symbols(m, analysis->sorted_symbols, analysis->num_symbol_effective, compare_by_name);
+	if (!m->option.without_sorting) {
+		quicksort_symbols(m, analysis->sorted_symbols, analysis->num_symbol_effective, compare_by_name);
+	}
 }
 
 void	destroy_analysis(t_analysis* analysis) {

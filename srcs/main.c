@@ -22,6 +22,8 @@ void	parse_option(t_master* m, int argc, char **argv) {
 				m->option.display_only_undefined = true;
 			} else if (arg[j] == 'r') {
 				m->option.reversed = true;
+			} else if (arg[j] == 'p') {
+				m->option.without_sorting = true;
 			} else {
 				// TODO: invalid option
 				break;
