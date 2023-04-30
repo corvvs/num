@@ -17,7 +17,9 @@ void	parse_option(t_master* m, int argc, char **argv) {
 			if (arg[j] == 'a') {
 				m->option.display_all = true;
 			} else if (arg[j] == 'g') {
-				m->option.display_only_externals = true;
+				m->option.display_only_external = true;
+			} else if (arg[j] == 'u') {
+				m->option.display_only_undefined = true;
 			} else {
 				// TODO: invalid option
 				break;
@@ -25,7 +27,8 @@ void	parse_option(t_master* m, int argc, char **argv) {
 		}
 	}
 
-	if (m->option.display_only_externals) {
+	// TODO 本当にこうか？
+	if (m->option.display_only_external || m->option.display_only_undefined) {
 		m->option.display_all = false;
 	}
 

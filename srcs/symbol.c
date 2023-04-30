@@ -128,8 +128,13 @@ void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_sym
 				break;
 		}
 	}
-	if (m->option.display_only_externals) {
+	if (m->option.display_only_external) {
 		if (symbol->bind != STB_GLOBAL && symbol->bind != STB_WEAK) {
+			return;
+		}
+	}
+	if (m->option.display_only_undefined) {
+		if (symbol->shndx != SHN_UNDEF) {
 			return;
 		}
 	}
