@@ -128,6 +128,11 @@ void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_sym
 				break;
 		}
 	}
+	if (m->option.display_only_externals) {
+		if (symbol->bind != STB_GLOBAL && symbol->bind != STB_WEAK) {
+			return;
+		}
+	}
 
 	// [セクション]
 	if (symbol->type == STT_SECTION) {

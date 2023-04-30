@@ -16,12 +16,19 @@ void	parse_option(t_master* m, int argc, char **argv) {
 		for (size_t j = 1; arg[j]; ++j) {
 			if (arg[j] == 'a') {
 				m->option.display_all = true;
+			} else if (arg[j] == 'g') {
+				m->option.display_only_externals = true;
 			} else {
 				// TODO: invalid option
 				break;
 			}
 		}
 	}
+
+	if (m->option.display_only_externals) {
+		m->option.display_all = false;
+	}
+
 	m->num_target = argc - i;
 	m->target_names = (const char**)(argv + i);
 }
@@ -30,7 +37,7 @@ const char*	default_target = "a.out";
 
 int main(int argc, char** argv) {
 	// ファイルのオープン
-	if (argc < 2) {
+	if (argc < 1) {
 		print_error_by_errno();
 	}
 
@@ -47,6 +54,7 @@ int main(int argc, char** argv) {
 	// [マスター構造体の初期化]
 
 	// [対象ファイル名の設定]
+	DEBUGOUT("num_target: %zu", master.num_target);
 	if (master.num_target < 1) {
 		master.num_target = 1;
 		master.target_names = &default_target;
