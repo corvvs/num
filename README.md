@@ -15,3 +15,5 @@ An `nm` clone that can analyze ELF-formatted object / executable files
   - display external symbols only. this OVERCOMES `-a`.
 - `-u`
   - display undefined symbols only. this OVERCOMES `-a`.
+- `-r`
+  - display in reversed order.
