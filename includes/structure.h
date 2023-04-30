@@ -181,6 +181,7 @@ typedef struct s_option {
 	bool	display_only_external;
 	bool	display_only_undefined;
 	bool	reversed;
+	bool	without_sorting;
 } t_option;
 
 // プログラムの実行時の情報をすべて保持する構造体
