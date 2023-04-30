@@ -12,4 +12,6 @@ An `nm` clone that can analyze ELF-formatted object / executable files
 - `-a`
   - display all symbols, including debugging ones
 - `-g`
-  - display only external symbols. this OVERCOMES `-a`.
+  - display external symbols only. this OVERCOMES `-a`.
+- `-u`
+  - display undefined symbols only. this OVERCOMES `-a`.
