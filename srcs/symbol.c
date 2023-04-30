@@ -15,7 +15,19 @@ void	determine_section_category(const t_master* m, const t_analysis* analysis, t
 		case SHT_INIT_ARRAY:
 		case SHT_FINI_ARRAY:
 		case SHT_NOTE:
+		case SHT_DYNAMIC:
+		case SHT_SYMTAB:
+		case SHT_DYNSYM:
+		case SHT_STRTAB:
+		case SHT_GNU_HASH:
+		case SHT_GNU_versym:
+		case SHT_GNU_verneed:
+		case SHT_RELA:
 		case SHT_PROGBITS: {
+			if (ft_strncmp(section->name, ".debug", 6) == 0) {
+				section->category = SC_DEBUG;
+				return;
+			}
 			// プログラムデータ（コードやデータなど）を格納するセクション
 			if (FLAG_ALL(section->flags, SHF_EXECINSTR | SHF_ALLOC)) {
 				// フラグがSHF_EXECINSTR | SHF_ALLOC → テキストセクション
@@ -42,6 +54,10 @@ void	determine_section_category(const t_master* m, const t_analysis* analysis, t
 				section->category = SC_READONLY;
 				return;
 			}
+			if (FLAG_ALL(section->flags, SHF_MERGE | SHF_STRINGS)) {
+				section->category = SC_MERGEABLE_CHARACTER;
+				return;
+			}
 			break;
 		}
 		case SHT_NOBITS: {
@@ -56,27 +72,23 @@ void	determine_section_category(const t_master* m, const t_analysis* analysis, t
 	section->category = SC_OTHER;
 }
 
-const t_section_unit*	get_referencing_section(const t_master* m, const t_analysis* analysis, const t_symbol_unit* symbol) {
+// シンボルの名前 name を決定する
+void	determine_symbol_name(
+	const t_master* m,
+	const t_analysis* analysis,
+	const t_table_pair* table_pair,
+	t_symbol_unit* symbol
+) {
 	(void)m;
-	(void)analysis;
-	(void)symbol;
-
-	switch (symbol->shndx) {
-		case SHN_UNDEF:
-		case SHN_BEFORE:
-		case SHN_AFTER:
-		// case SHN_AMD64_LCOMMON:
-		// case SHN_SUNW_IGNORE:
-		case SHN_ABS:
-		case SHN_COMMON:
-		case SHN_XINDEX:
-			break;
-		default:
-			YOYO_ASSERT(symbol->shndx < analysis->num_section);
-			return &analysis->sections[symbol->shndx];
-}
-	
-	return NULL;
+	if (symbol->type == STT_SECTION) {
+		// セクションシンボル
+		const t_section_unit* section = &analysis->sections[symbol->shndx];
+		symbol->name = section->name;
+		return;
+	} else {
+		const t_string_table_unit* string_table = &table_pair->string_table;
+		symbol->name = string_table->head + symbol->name_offset;
+	}
 }
 
 // グローバルなデバッグ情報シンボル
@@ -92,13 +104,11 @@ void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_sym
 	(void)analysis;
 	(void)symbol;
 
-	const t_section_unit*	referencing_section = get_referencing_section(m, analysis, symbol);
-
-	DEBUGOUT("|%s| bind:%s type:%s section-cat:%s shndx:%zu %llu %llu %u addr: %p value: %llu size: %llu",
-		symbol->name,
+	DEBUGOUT("bind:%s\ttype:%s\t|%s|\tsection-cat:%s shndx:%zu %llu %llu %u addr: %p value: %llx size: %llu",
 		symbinding_to_name(symbol->bind),
 		symtype_to_name(symbol->type),
-		referencing_section ? section_category_to_name(referencing_section->category) : NULL,
+		symbol->name,
+		symbol->relevant_section ? section_category_to_name(symbol->relevant_section->category) : NULL,
 		symbol->shndx,
 		symbol->bind,
 		symbol->type,
@@ -107,6 +117,69 @@ void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_sym
 		symbol->value,
 		symbol->size
 	);
+
+	// if (symbol->bind == STB_LOCAL && symbol->type == STT_NOTYPE) {
+	// 	// 表示しない？
+	// 	symbol->symbol_griff = SYMGRIFF_UNKNOWN;
+	// 	return;
+	// }
+
+	// [セクション]
+	if (symbol->type == STT_SECTION) {
+		const t_section_unit* section = &analysis->sections[symbol->shndx];
+		switch (section->category) {
+			case SC_DATA: {
+				// データセクション
+				symbol->symbol_griff = 'd';
+				return;
+			}
+			case SC_TEXT: {
+				// テキストセクション
+				symbol->symbol_griff = 't';
+				return;
+			}
+			case SC_BSS: {
+				// BSSセクション
+				symbol->symbol_griff = 'b';
+				return;
+			}
+			case SC_GOT: {
+				// GOTセクション
+				symbol->symbol_griff = 'd';
+				return;
+			}
+			case SC_SMALL: {
+				// スモールオブジェクトセクション
+				symbol->symbol_griff = 's';
+				return;
+			}
+			case SC_OTHER: {
+				// その他のセクション
+				symbol->symbol_griff = 'O';
+				return;
+			}
+			case SC_UNDEFINED: {
+				// 未定義のセクション
+				symbol->symbol_griff = 'U';
+				return;
+			}
+			case SC_READONLY: {
+				// 読み取り専用データセクション
+				symbol->symbol_griff = 'r';
+				return;
+			}
+			case SC_DEBUG: {
+				symbol->symbol_griff = 'N';
+				return;
+			}
+			case SC_MERGEABLE_CHARACTER: {
+				symbol->symbol_griff = 'n';
+				return;
+			}
+			default:
+				break;
+		}
+	}
 
 	// [ウィークシンボル]
 	switch (symbol->bind) {
@@ -179,8 +252,8 @@ void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_sym
 		}
 
 		default: {
-			if (referencing_section != NULL) {
-				switch (referencing_section->category) {
+			if (symbol->relevant_section != NULL) {
+				switch (symbol->relevant_section->category) {
 					case SC_BSS: {
 						switch (symbol->bind) {
 							case STB_GLOBAL:
@@ -238,8 +311,8 @@ void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_sym
 			return;
 		}
 		case STT_OBJECT: {
-			if (referencing_section != NULL) {
-				switch (referencing_section->category) {
+			if (symbol->relevant_section != NULL) {
+				switch (symbol->relevant_section->category) {
 					case SC_GOT: {
 						switch (symbol->bind) {
 							case STB_GLOBAL:
@@ -272,8 +345,9 @@ void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_sym
 			}
 			break;
 		}
+		case STT_NOTYPE:
 		case STT_FUNC: {
-			if (referencing_section && referencing_section->category == SC_TEXT) {
+			if (symbol->relevant_section && symbol->relevant_section->category == SC_TEXT) {
 				switch (symbol->bind) {
 					case STB_GLOBAL:
 						// グローバルなテキストシンボル
@@ -285,9 +359,6 @@ void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_sym
 						return;
 				}
 			}
-			break;
-		}
-		case STT_NOTYPE: {
 			break;
 		}
 		default:

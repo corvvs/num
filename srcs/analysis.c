@@ -56,10 +56,12 @@ void	extract_sections(t_master* m, t_analysis* analysis, const void* section_hea
 			section->name = NULL;
 		}
 		determine_section_category(m, analysis, section);
-		DEBUGINFO("section: %zu -> %s\t%s\t%c%c%c%c%c%c%c%c%c%c%c%c%c%c %b\t%s",
+		DEBUGINFO("section: %zu(%zx) -> %s(%llx)\t%s %llu\t%c%c%c%c%c%c%c%c%c%c%c%c%c%c %b\t%s",
 			i,
-			sectiontype_to_name(section->type),
+			section->offset,
+			sectiontype_to_name(section->type), section->type,
 			section_category_to_name(section->category),
+			section->link,
 			(section->flags & SHF_WRITE)			? 'w' : '-',
 			(section->flags & SHF_ALLOC)			? 'a' : '-',
 			(section->flags & SHF_EXECINSTR)		? 'x' : '-',
@@ -91,7 +93,7 @@ void extract_symbol_tables(t_analysis* analysis) {
 				size_t	string_table_index = section->link;
 				YOYO_ASSERT(string_table_index < analysis->num_section);
 				t_section_unit*	strtab_section = &analysis->sections[string_table_index];
-				t_symbol_list_node* symbol_pair = &analysis->symbol_tables[i_symbol_table];
+				t_table_pair* symbol_pair = &analysis->symbol_tables[i_symbol_table];
 
 				// [シンボルテーブルと文字列テーブルをペアにする]
 				map_section_to_symbol_table(section, &symbol_pair->symbol_table);
@@ -107,9 +109,8 @@ void	extract_symbols(t_master* m, t_analysis* analysis) {
 	analysis->num_symbol_effective = 0;
 	size_t i_symbol = 0;
 	for (size_t i_symbol_table = 0; i_symbol_table < analysis->num_symbol_table; ++i_symbol_table) {
-		t_symbol_list_node*	node = &analysis->symbol_tables[i_symbol_table];
+		t_table_pair*	node = &analysis->symbol_tables[i_symbol_table];
 		t_symbol_table_unit* symbol_table = &node->symbol_table;
-		t_string_table_unit* string_table = &node->string_table;
 		DEBUGINFO("symbol table: %zu: %s %s",
 			i_symbol_table,
 			sectiontype_to_name(symbol_table->section->type),
@@ -120,16 +121,22 @@ void	extract_symbols(t_master* m, t_analysis* analysis) {
 			t_symbol_unit*	symbol_unit = &analysis->symbols[i_symbol];
 			switch (analysis->category) {
 				case TC_ELF32:
-					map_elf32_symbol(current_symbol, string_table, symbol_unit);
+					map_elf32_symbol(current_symbol, symbol_unit);
 					break;
 				case TC_ELF64:
-					map_elf64_symbol(current_symbol, string_table, symbol_unit);
+					map_elf64_symbol(current_symbol, symbol_unit);
 					break;
 				default:
 					// 何かがおかしい
 					print_error_by_message(m, "SOMETHING WRONG");
 					break;
 			}
+
+			symbol_unit->relevant_section = get_referencing_section(m, analysis, symbol_unit);
+
+			// シンボル名をセットする
+			determine_symbol_name(m, analysis, node, symbol_unit);
+
 			// シンボルグリフを決定する
 			determine_symbol_griff(m, analysis, symbol_unit);
 			current_symbol += symbol_table->entry_size;
@@ -199,10 +206,17 @@ static bool	should_print_address(const t_symbol_unit* symbol) {
 	return symbol->shndx != SHN_UNDEF;
 }
 
+static bool should_print_symbol(const t_symbol_unit* symbol) {
+	if (symbol->symbol_griff == 'U' && ft_strnlen(symbol->name, 1) == 0) { return false; }
+	if (symbol->name[0] == '$' && ft_strnlen(symbol->name, 3) == 2) { return false; }
+	return true;
+}
+
 void	print_symbols(const t_analysis* analysis) {
 	const size_t	addr_width = 16;
 	for (size_t i = 0; i < analysis->num_symbol_effective; ++i) {
 		t_symbol_unit*	symbol = analysis->sorted_symbols[i];
+		if (!should_print_symbol(symbol)) { continue; }
 
 		// [アドレスの表示]
 		if (!should_print_address(symbol)) {
@@ -259,7 +273,7 @@ bool	analyze_file(t_master* m, const char* target_path) {
 
 	// シンボルユニット配列を用意する
 	YOYO_ASSERT(analysis->num_symbol_table > 0);
-	analysis->symbol_tables = malloc(sizeof(t_symbol_list_node) * analysis->num_symbol_table);
+	analysis->symbol_tables = malloc(sizeof(t_table_pair) * analysis->num_symbol_table);
 	YOYO_ASSERT(analysis->symbol_tables != NULL);
 	
 	// [シンボルテーブルがあったら, 対応する文字列テーブルとペアにして配列に入れていく]

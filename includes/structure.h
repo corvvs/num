@@ -6,6 +6,9 @@
 # include <stdbool.h>
 # include <elf.h>
 
+// 事前宣言
+struct s_section_unit;
+
 // type alias
 typedef Elf64_Ehdr t_elf_64_header;
 typedef Elf64_Shdr t_elf_64_section_header;
@@ -41,10 +44,16 @@ typedef enum e_section_category {
 	SC_TEXT,
 	// BSSセクション
 	SC_BSS,
+	// 
+	SC_MERGEABLE_CHARACTER,
+	// デバッグセクション
+	SC_DEBUG,
 	// 未定義セクション
 	SC_UNDEFINED,
 	SC_OTHER,
 }	t_section_category;
+
+# define SYMGRIFF_UNKNOWN '?'
 
 typedef struct s_symbol_unit {
 	size_t		address;      // シンボルのアドレス
@@ -62,6 +71,8 @@ typedef struct s_symbol_unit {
 	bool		is_debug;     // デバッグシンボルかどうか(-a)
 	bool		is_global;    // 外部シンボルかどうか(-g)
 	bool		is_undefined; // 未定義シンボルかどうか(-u)
+
+	const struct s_section_unit*	relevant_section;
 } t_symbol_unit;
 
 // (32/64ビット共通)
@@ -76,6 +87,7 @@ typedef struct s_section_unit {
 	size_t		offset; // セクションのファイルオフセット
 	size_t		entsize; // エントリーサイズ
 	size_t		size; // セクションのサイズ
+	uint64_t	info;
 
 	t_section_category category;
 } t_section_unit;
@@ -118,7 +130,7 @@ typedef struct s_symbol_list_node
 	t_symbol_table_unit symbol_table;
 	t_string_table_unit string_table;
 	struct s_symbol_list_node *next;
-} t_symbol_list_node;
+} t_table_pair;
 
 typedef struct s_object_header {
 	size_t	hsize;     // ヘッダのサイズ
@@ -151,7 +163,7 @@ typedef struct s_analysis
 	t_section_unit*	sections;    // セクション構造体の配列; 要素数は num_section に等しい
 	
 	size_t				num_symbol_table;
-	t_symbol_list_node*	symbol_tables; // シンボルテーブルの配列
+	t_table_pair*	symbol_tables; // シンボルテーブルの配列
 
 	size_t			num_symbol;           // このファイルに存在するであろうシンボルの総数
 	size_t			num_symbol_effective; // ↑ のうち, 表示対象となるシンボルの数

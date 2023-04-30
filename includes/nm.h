@@ -30,10 +30,11 @@ void	map_elf64_header(const t_elf_64_header* defined, t_object_header* original)
 void	map_elf32_header(const t_elf_32_header* defined, t_object_header* original);
 void	map_elf64_section_header(const t_elf_64_section_header* defined, t_section_unit* original);
 void	map_elf32_section_header(const t_elf_32_section_header* defined, t_section_unit* original);
-void	map_elf64_symbol(const t_elf_64_symbol* defined, const t_string_table_unit* string_table, t_symbol_unit* original);
-void	map_elf32_symbol(const t_elf_32_symbol* defined, const t_string_table_unit* string_table, t_symbol_unit* original);
+void	map_elf64_symbol(const t_elf_64_symbol* defined, t_symbol_unit* original);
+void	map_elf32_symbol(const t_elf_32_symbol* defined, t_symbol_unit* original);
 void	map_section_to_symbol_table(const t_section_unit* section, t_symbol_table_unit* table);
 void	map_section_to_string_table(const t_section_unit* section, t_string_table_unit* table);
+const t_section_unit*	get_referencing_section(const t_master* m, const t_analysis* analysis, const t_symbol_unit* symbol);
 
 // analysis.c
 bool	analyze_file(t_master* m, const char* target_path);
@@ -43,6 +44,7 @@ bool	analyze_header(t_analysis* analysis);
 
 // symbol.c
 void	determine_section_category(const t_master* m, const t_analysis* analysis, t_section_unit* section);
+void	determine_symbol_name(const t_master* m, const t_analysis* analysis, const t_table_pair* table_pair, t_symbol_unit* symbol);
 void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_symbol_unit* symbol);
 
 // basic_utils.c
