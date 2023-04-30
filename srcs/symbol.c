@@ -118,11 +118,16 @@ void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_sym
 		symbol->size
 	);
 
-	// if (symbol->bind == STB_LOCAL && symbol->type == STT_NOTYPE) {
-	// 	// 表示しない？
-	// 	symbol->symbol_griff = SYMGRIFF_UNKNOWN;
-	// 	return;
-	// }
+	// [セクションとファイルシンボルはデフォルト表示しない]
+	if (!m->option.display_all) {
+		switch (symbol->type) {
+			case STT_SECTION:
+			case STT_FILE:
+				return;
+			default:
+				break;
+		}
+	}
 
 	// [セクション]
 	if (symbol->type == STT_SECTION) {
@@ -209,6 +214,7 @@ void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_sym
 				}
 			}
 		}
+		return;
 	}
 
 	switch (symbol->shndx) {
