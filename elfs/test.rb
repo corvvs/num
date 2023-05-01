@@ -41,7 +41,7 @@ ELFS.each_with_index{ |elf, i|
     `nm #{opt} #{elf} > #{real_file}; ../ft_nm #{opt} #{elf} 2>/dev/null > #{mine_file}`
     diff = `diff #{real_file} #{mine_file}`
     ok = diff == ""
-    some_failed = some_failed || ok
+    some_failed = some_failed || !ok
     print "#{ok ? "ok" : "KO"} "
   }
   puts ""
