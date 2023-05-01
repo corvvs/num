@@ -76,3 +76,7 @@ t:	$(NAME)
 .PHONY:	rt
 rt:	fclean t
 
+.PHONY:	tall
+tall:	$(NAME)
+	$(MAKE) -C elfs
+
