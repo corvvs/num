@@ -28,6 +28,8 @@ Options = [
   "-rg",
 ]
 
+some_elf_failed = false
+
 ELFS.each_with_index{ |elf, i|
   n = i + 1
   puts "##{n}: #{elf}"
@@ -42,9 +44,12 @@ ELFS.each_with_index{ |elf, i|
     diff = `diff #{real_file} #{mine_file}`
     ok = diff == ""
     some_failed = some_failed || !ok
-    print "#{ok ? "ok" : "KO"} "
+    print "#{ok ? "\e[32mok\e[0m" : "\e[31mKO\e[0m"} "
   }
   puts ""
-  puts some_failed ? "[KO]" : "[ok]"
+  puts some_failed ? "\e[31m[KO]\e[0m" : "\e[32m[ok]\e[0m"
+  some_elf_failed = some_elf_failed || some_failed
 }
+
+exit (some_elf_failed ? 1 : 0)
 
