@@ -103,17 +103,33 @@ static char	determine_special_section_griff(const t_section_unit* section) {
 	return SYMGRIFF_UNKNOWN;
 }
 
-// symbol のシンボルグリフを決定する
-void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_symbol_unit* symbol) {
-	(void)m;
-	(void)analysis;
-	(void)symbol;
+static t_visibility	infer_symbol_visibility(const t_symbol_unit* symbol) {
+	switch (symbol->bind) {
+		case STB_GLOBAL:
+			return V_GLOBAL;
+		case STB_LOCAL:
+			return V_LOCAL;
+		case STB_WEAK: {
+			if (symbol->relevant_section != NULL) {
+				return V_GLOBAL;
+			} else {
+				return V_LOCAL;
+			}
+		}
+		default:
+			break;
+	}
+	const bool maybe_global = symbol->name[0] != '_';
+	return maybe_global ? V_GLOBAL : V_LOCAL;
+}
 
-	DEBUGOUT("bind:%s type:%s |%s|\tsection-cat:%s shndx:%zu b:%llu t:%llu i:%u addr: %p value: %llx size: %llu",
+void	debug_print_symbol(const t_symbol_unit* symbol) {
+	DEBUGOUT("bind:%s type:%s\t|%s|\tscat:%s vis:%s shndx:%zu b:%llu t:%llu i:%u addr: %p value: %llx size: %llu",
 		symbinding_to_name(symbol->bind),
 		symtype_to_name(symbol->type),
 		symbol->name,
 		symbol->relevant_section ? section_category_to_name(symbol->relevant_section->category) : NULL,
+		symbol_visibility_to_name(symbol->visibility),
 		symbol->shndx,
 		symbol->bind,
 		symbol->type,
@@ -122,6 +138,17 @@ void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_sym
 		symbol->value,
 		symbol->size
 	);
+}
+
+// symbol のシンボルグリフを決定する
+void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_symbol_unit* symbol) {
+	(void)m;
+	(void)analysis;
+	(void)symbol;
+
+	debug_print_symbol(symbol);
+
+	t_visibility	visibility = infer_symbol_visibility(symbol);
 
 	// [セクションとファイルシンボルはデフォルト表示しない]
 	if (!m->option.display_all) {
@@ -216,8 +243,7 @@ void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_sym
 		case STB_WEAK: {
 			switch (symbol->type) {
 				case STT_OBJECT: {
-					const bool maybe_global = symbol->name[0] != '_';
-					if (maybe_global) {
+					if (visibility == V_GLOBAL) {
 						// グローバルなウィークオブジェクト
 						symbol->symbol_griff = 'V';
 					} else {
@@ -227,8 +253,7 @@ void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_sym
 					return;
 				}
 				default: {
-					const bool maybe_global = symbol->name[0] != '_';
-					if (maybe_global) {
+					if (visibility == V_GLOBAL) {
 						// グローバルなウィーク関数
 						symbol->symbol_griff = 'W';
 					} else {

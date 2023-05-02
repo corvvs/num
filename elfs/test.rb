@@ -46,7 +46,7 @@ ELFS.each_with_index{ |elf, i|
     diff_file = "#{dir}/compare.diff"
 
     `mkdir -p #{dir}; nm #{opt} #{elf} > #{real_file}; ../ft_nm #{opt} #{elf} 2>/dev/null > #{mine_file}`
-    diff = `diff #{real_file} #{mine_file}`
+    diff = `diff -u #{real_file} #{mine_file}`
 
     ok = diff == ""
     some_failed = some_failed || !ok

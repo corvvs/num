@@ -81,6 +81,7 @@ void	map_elf64_symbol(const t_elf_64_symbol* defined, t_symbol_unit* original) {
 	original->shndx = defined->st_shndx;
 	original->value = defined->st_value;
 	original->size = defined->st_size;
+	original->visibility = ELF64_ST_VISIBILITY(defined->st_other);
 
 	original->is_debug = false;
 	original->is_global = false;
@@ -100,6 +101,7 @@ void	map_elf32_symbol(const t_elf_32_symbol* defined, t_symbol_unit* original) {
 	original->shndx = defined->st_shndx;
 	original->value = defined->st_value;
 	original->size = defined->st_size;
+	original->visibility = ELF32_ST_VISIBILITY(defined->st_other);
 
 	original->is_debug = false;
 	original->is_global = false;
