@@ -43,34 +43,27 @@ void	parse_option(t_master* m, int argc, char **argv) {
 const char*	default_target = "a.out";
 
 int main(int argc, char** argv) {
-	// ファイルのオープン
+	// [想定外の場合ただちに終了]
 	if (argc < 1) {
-		print_error_by_errno();
+		exit(1);
 	}
 
+	// [マスター構造体の初期化]
 	t_master	master = {
 		.exec_name = get_exec_name(argv),
 		.option = {0},
 	};
 
+	// [オプション解析]
 	parse_option(&master, argc, argv);
 
-	// TODO: ファイルが指定されていない場合は a.out を対象とする
-	// TODO: マルチファイル対応
-
-	// [マスター構造体の初期化]
-
 	// [対象ファイル名の設定]
-	DEBUGOUT("num_target: %zu", master.num_target);
 	if (master.num_target < 1) {
 		master.num_target = 1;
 		master.target_names = &default_target;
 	}
 
 	for (master.i = 0; master.i < master.num_target; ++master.i) {
-		if (!analyze_file(&master, master.target_names[master.i])) {
-			// エラー発生時
-			break;
-		}
+		analyze_file(&master, master.target_names[master.i]);
 	}
 }

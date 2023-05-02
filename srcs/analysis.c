@@ -27,7 +27,7 @@ void	extract_sections(t_master* m, t_analysis* analysis, const void* section_hea
 				break;
 			default:
 				// 何かがおかしい
-				print_error_by_message(m, "SOMETHING WRONG");
+				print_unrecoverable_error_by_message(m, analysis->target.path, "SOMETHING WRONG");
 				break;
 		}
 		section->head = analysis->target.head + section->offset;
@@ -128,7 +128,7 @@ void	extract_symbols(t_master* m, t_analysis* analysis) {
 					break;
 				default:
 					// 何かがおかしい
-					print_error_by_message(m, "SOMETHING WRONG");
+					print_unrecoverable_error_by_message(m, analysis->target.path, "SOMETHING WRONG");
 					break;
 			}
 			symbol_unit->offset = (size_t)(current_symbol - analysis->target.head);
@@ -213,12 +213,12 @@ void	sort_symbols(const t_master* m, t_analysis* analysis) {
 	}
 }
 
-void	destroy_analysis(t_analysis* analysis) {
+void	destroy_analysis(const t_master* m, t_analysis* analysis) {
 	free(analysis->sections);
 	free(analysis->symbol_tables);
 	free(analysis->symbols);
 	free(analysis->sorted_symbols);
-	destroy_target_file(&analysis->target);
+	destroy_target_file(m, &analysis->target);
 }
 
 static bool	should_print_address(const t_symbol_unit* symbol) {
@@ -266,15 +266,11 @@ bool	analyze_file(t_master* m, const char* target_path) {
 	t_analysis*	analysis = &m->current_analysis;
 	*analysis = (t_analysis){0};
 	analysis->target_index = m->i;
-	if (m->num_target > 1) {
-		yoyo_dprintf(STDOUT_FILENO, "\n");
-		yoyo_dprintf(STDOUT_FILENO, "%s:\n", target_path);
-	}
 
 	t_target_file*	target = &m->current_analysis.target;
 	// [ファイルの展開]
-	if (!deploy_target_file(target_path, target)) {
-		print_error_by_errno();
+	if (!mmap_target_file(m, target_path, target)) {
+		return false;
 	}
 
 	// この時点で, 対象ファイルは少なくとも 32ビットELFヘッダ以上のサイズを持っていることが確定している.
@@ -317,8 +313,12 @@ bool	analyze_file(t_master* m, const char* target_path) {
 	sort_symbols(m, analysis);
 
 	// [表示]
+	if (m->num_target > 1) {
+		yoyo_dprintf(STDOUT_FILENO, "\n");
+		yoyo_dprintf(STDOUT_FILENO, "%s:\n", target_path);
+	}
 	print_symbols(analysis);
 
-	destroy_analysis(analysis);
+	destroy_analysis(m, analysis);
 	return true;
 }
