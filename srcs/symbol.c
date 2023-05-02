@@ -14,6 +14,7 @@ void	determine_section_category(const t_master* m, const t_analysis* analysis, t
 		}
 		case SHT_INIT_ARRAY:
 		case SHT_FINI_ARRAY:
+		case SHT_PREINIT_ARRAY:
 		case SHT_NOTE:
 		case SHT_DYNAMIC:
 		case SHT_SYMTAB:
@@ -22,8 +23,10 @@ void	determine_section_category(const t_master* m, const t_analysis* analysis, t
 		case SHT_GNU_HASH:
 		case SHT_GNU_versym:
 		case SHT_GNU_verneed:
+		case SHT_GNU_LIBLIST:
 		case SHT_RELA:
 		case SHT_PROGBITS: {
+			// prefixed by ".debug"
 			if (ft_strncmp(section->name, ".debug", 6) == 0) {
 				section->category = SC_DEBUG;
 				return;
@@ -91,12 +94,14 @@ void	determine_symbol_name(
 	}
 }
 
-// グローバルなデバッグ情報シンボル
-// ローカルなデバッグ情報シンボル
-// スタックまたはその他の未定義セクションシンボル
-// グローバルなスモールオブジェクトセクションシンボル	Small
-// ローカルなスモールオブジェクトセクションシンボル	small
-// 未定義のシンボル	Undefined
+
+// 特定のセクションについて, シンボルグリフを決め打ちする
+static char	determine_special_section_griff(const t_section_unit* section) {
+	if (section->type == SHT_PROGBITS && ft_strcmp(section->name, ".note.GNU-stack") == 0) {
+		return 'n';
+	}
+	return SYMGRIFF_UNKNOWN;
+}
 
 // symbol のシンボルグリフを決定する
 void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_symbol_unit* symbol) {
@@ -104,7 +109,7 @@ void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_sym
 	(void)analysis;
 	(void)symbol;
 
-	DEBUGOUT("bind:%s\ttype:%s\t|%s|\tsection-cat:%s shndx:%zu %llu %llu %u addr: %p value: %llx size: %llu",
+	DEBUGOUT("bind:%s type:%s |%s|\tsection-cat:%s shndx:%zu b:%llu t:%llu i:%u addr: %p value: %llx size: %llu",
 		symbinding_to_name(symbol->bind),
 		symtype_to_name(symbol->type),
 		symbol->name,
@@ -142,6 +147,16 @@ void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_sym
 	// [セクション]
 	if (symbol->type == STT_SECTION) {
 		const t_section_unit* section = &analysis->sections[symbol->shndx];
+
+		// 特殊なセクションの場合はシンボルグリフを決め打ちする
+		{
+			char c = determine_special_section_griff(section);
+			if (c != SYMGRIFF_UNKNOWN) {
+				symbol->symbol_griff = c;
+				return;
+			}
+		}
+
 		switch (section->category) {
 			case SC_DATA: {
 				// データセクション
@@ -168,11 +183,11 @@ void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_sym
 				symbol->symbol_griff = 's';
 				return;
 			}
-			case SC_OTHER: {
-				// その他のセクション
-				symbol->symbol_griff = 'O';
-				return;
-			}
+			// case SC_OTHER: {
+			// 	// その他のセクション
+			// 	symbol->symbol_griff = 'O';
+			// 	return;
+			// }
 			case SC_UNDEFINED: {
 				// 未定義のセクション
 				symbol->symbol_griff = 'U';
