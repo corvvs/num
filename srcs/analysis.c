@@ -145,19 +145,22 @@ void	extract_symbols(t_master* m, t_analysis* analysis) {
 	}
 }
 
-int		compare_by_address(const t_symbol_unit* a, const t_symbol_unit* b) {
-	if (a->address < b->address) {
-		return -1;
-	}
-	if (a->address > b->address) {
-		return 1;
-	}
-	return 0;
-}
-
 int		compare_by_name(const t_symbol_unit* a, const t_symbol_unit* b, bool rev) {
 	int rv = ft_strcmp(a->name, b->name);
 	return rev ? -rv : rv;
+}
+
+int		compare_by_address(const t_symbol_unit* a, const t_symbol_unit* b, bool rev) {
+	int rv = a->address > b->address ? +1 : a->address < b->address ? -1 : 0;
+	return rev ? -rv : rv;
+}
+
+int		compare_complex(const t_symbol_unit* a, const t_symbol_unit* b, bool rev) {
+	int rv = compare_by_name(a, b, rev);
+	if (rv == 0) {
+		rv = compare_by_address(a, b, false); // TODO: 環境依存?
+	}
+	return rv;
 }
 
 void	quicksort_symbols(
@@ -196,7 +199,7 @@ void	sort_symbols(const t_master* m, t_analysis* analysis) {
 		analysis->sorted_symbols[i] = &analysis->symbols[i];
 	}
 	if (!m->option.without_sorting) {
-		quicksort_symbols(m, analysis->sorted_symbols, analysis->num_symbol_effective, compare_by_name);
+		quicksort_symbols(m, analysis->sorted_symbols, analysis->num_symbol_effective, compare_complex);
 	}
 }
 
