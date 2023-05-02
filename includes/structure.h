@@ -53,6 +53,11 @@ typedef enum e_section_category {
 	SC_OTHER,
 }	t_section_category;
 
+typedef enum	e_visibility {
+	V_GLOBAL,
+	V_LOCAL,
+}	t_visibility;
+
 # define SYMGRIFF_UNKNOWN '?'
 
 typedef struct s_symbol_unit {
@@ -68,6 +73,7 @@ typedef struct s_symbol_unit {
 	size_t		shndx;
 	uint64_t	value;
 	uint64_t	size;
+	uint64_t	visibility;
 
 	bool		is_debug;     // デバッグシンボルかどうか(-a)
 	bool		is_global;    // 外部シンボルかどうか(-g)
@@ -79,15 +85,15 @@ typedef struct s_symbol_unit {
 // (32/64ビット共通)
 // セクションヘッダから抽出したセクションの情報
 typedef struct s_section_unit {
-	const char*	name; // セクション名; 文字列テーブル上のある位置を指す
+	const char*	name;        // セクション名; 文字列テーブル上のある位置を指す
 	size_t		name_offset; // セクション名の文字列テーブルオフセット
-	uint64_t	type; // タイプ
-	uint64_t	flags; // フラグ
-	uint64_t	link; // リンク先
-	void*		head; // セクションのメモリマップアドレス
-	size_t		offset; // セクションのファイルオフセット
-	size_t		entsize; // エントリーサイズ
-	size_t		size; // セクションのサイズ
+	uint64_t	type;        // タイプ
+	uint64_t	flags;       // フラグ
+	uint64_t	link;        // リンク先
+	void*		head;        // セクションのメモリマップアドレス
+	size_t		offset;      // セクションのファイルオフセット
+	size_t		entsize;     // エントリーサイズ
+	size_t		size;        // セクションのサイズ
 	uint64_t	info;
 
 	t_section_category category;
@@ -153,28 +159,28 @@ typedef struct s_target_file
 // 64ビットの解析用データ
 typedef struct s_analysis
 {
-	t_target_file	target;      // 対象ファイル
-	int				error_no;    // このファイルで最後に発生したエラーの errno
+	t_target_file		target;      // 対象ファイル
+	int					error_no;    // このファイルで最後に発生したエラーの errno
 
 	t_target_category	category;
 	
-	t_object_header	header;      // このオブジェクトファイル(ELFファイル)のヘッダ情報
+	t_object_header		header;      // このオブジェクトファイル(ELFファイル)のヘッダ情報
 	
-	size_t			num_section; // セクションヘッダーテーブルに存在するであろうセクションの数
-	t_section_unit*	sections;    // セクション構造体の配列; 要素数は num_section に等しい
+	size_t				num_section; // セクションヘッダーテーブルに存在するであろうセクションの数
+	t_section_unit*		sections;    // セクション構造体の配列; 要素数は num_section に等しい
 	
 	size_t				num_symbol_table;
-	t_table_pair*	symbol_tables; // シンボルテーブルの配列
+	t_table_pair*		symbol_tables; // シンボルテーブルの配列
 
-	size_t			num_symbol;           // このファイルに存在するであろうシンボルの総数
-	size_t			num_symbol_effective; // ↑ のうち, 表示対象となるシンボルの数
-	t_symbol_unit*	symbols;     // シンボル構造体の配列; 要素数は num_symbol に等しい
-	t_symbol_unit**	sorted_symbols; // ソート後の symbols; ポインタの配列であることに注意
+	size_t				num_symbol;           // このファイルに存在するであろうシンボルの総数
+	size_t				num_symbol_effective; // ↑ のうち, 表示対象となるシンボルの数
+	t_symbol_unit*		symbols;     // シンボル構造体の配列; 要素数は num_symbol に等しい
+	t_symbol_unit**		sorted_symbols; // ソート後の symbols; ポインタの配列であることに注意
 
 	// セクション名を格納する文字列テーブル
-	size_t			section_name_str_table_index;
+	size_t				section_name_str_table_index;
 	t_string_table_unit	section_name_str_table;
-	bool			found_section_name_str_table;
+	bool				found_section_name_str_table;
 } t_analysis;
 
 typedef struct s_option {

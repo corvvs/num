@@ -37,3 +37,10 @@ const char* section_category_to_name(uint64_t value) {
 	for (size_t i = 0; i < sizeof(names) / sizeof(char *); ++i) { if (value == values[i]) { return names[i]; } }
 	return "UNKNOWN";
 }
+
+const char* symbol_visibility_to_name(uint64_t value) {
+	static const char* names[] = (const char* []){"STV_DEFAULT", "STV_INTERNAL", "STV_HIDDEN", "STV_PROTECTED"};
+	static const uint64_t values[] = (uint64_t []){ STV_DEFAULT, STV_INTERNAL, STV_HIDDEN, STV_PROTECTED };
+	for (size_t i = 0; i < sizeof(names) / sizeof(char *); ++i) { if (value == values[i]) { return names[i]; } }
+	return "UNKNOWN";
+}
