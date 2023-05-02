@@ -4,6 +4,8 @@ NAMES	:= \
 	none_g\
 	libft_malloc.so\
 	webserv\
+	ft_ls\
+	ft_nm\
 	# libft.a\
 
 CC		:= cc
@@ -38,6 +40,15 @@ webserv:	ws
 ws:
 	git clone https://github.com/corvvs/webserv.git $@
 
+ft_ls:	ls
+	$(MAKE) -C $^
+	cp $^/$@ $@
+
+ls:
+	git clone https://github.com/corvvs/ls.git $@
+
+ft_nm:
+	cp ../$@ $@
 
 .PHONY:	clean
 clean:
