@@ -265,6 +265,11 @@ void	print_symbols(const t_analysis* analysis) {
 bool	analyze_file(t_master* m, const char* target_path) {
 	t_analysis*	analysis = &m->current_analysis;
 	*analysis = (t_analysis){0};
+	analysis->target_index = m->i;
+	if (m->num_target > 1) {
+		yoyo_dprintf(STDOUT_FILENO, "\n");
+		yoyo_dprintf(STDOUT_FILENO, "%s:\n", target_path);
+	}
 
 	t_target_file*	target = &m->current_analysis.target;
 	// [ファイルの展開]

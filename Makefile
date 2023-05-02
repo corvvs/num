@@ -28,7 +28,6 @@ CFLAGS		=	$(CCOREFLAGS) -D DEBUG -g -fsanitize=address -fsanitize=undefined
 RM			:=	rm -rf
 
 all:			$(NAME)
-	./$(NAME) a.out
 
 bonus:
 	$(MAKE) all WITH_BONUS=1
