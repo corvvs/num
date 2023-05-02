@@ -56,7 +56,7 @@ void	extract_sections(t_master* m, t_analysis* analysis, const void* section_hea
 			section->name = NULL;
 		}
 		determine_section_category(m, analysis, section);
-		DEBUGINFO("section: %zu(%zx) -> %s(%llx)\t%s %llu\t%c%c%c%c%c%c%c%c%c%c%c%c%c%c %b\t%s",
+		DEBUGINFO("section: %zu(%zx) -> %s(t:%llx)\t%s li:%llu\t%c%c%c%c%c%c%c%c%c%c%c%c%c%c %b\t%s",
 			i,
 			section->offset,
 			sectiontype_to_name(section->type), section->type,
