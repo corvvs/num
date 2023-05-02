@@ -56,6 +56,7 @@ typedef enum e_section_category {
 # define SYMGRIFF_UNKNOWN '?'
 
 typedef struct s_symbol_unit {
+	size_t		offset;	      // シンボルのオフセット
 	size_t		address;      // シンボルのアドレス
 	char		symbol_griff; // シンボルグリフ
 	const char*	name;         // シンボルの名前; 文字列テーブル上のアドレスを指している。

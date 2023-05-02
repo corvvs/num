@@ -131,7 +131,7 @@ void	extract_symbols(t_master* m, t_analysis* analysis) {
 					print_error_by_message(m, "SOMETHING WRONG");
 					break;
 			}
-
+			symbol_unit->offset = (size_t)(current_symbol - analysis->target.head);
 			symbol_unit->relevant_section = get_referencing_section(m, analysis, symbol_unit);
 
 			// シンボル名をセットする
@@ -145,20 +145,30 @@ void	extract_symbols(t_master* m, t_analysis* analysis) {
 	}
 }
 
+// シンボル名による比較
 int		compare_by_name(const t_symbol_unit* a, const t_symbol_unit* b, bool rev) {
 	int rv = ft_strcmp(a->name, b->name);
 	return rev ? -rv : rv;
 }
 
+// シンボルのアドレス(value)による比較
+// (オフセットではないことに注意)
 int		compare_by_address(const t_symbol_unit* a, const t_symbol_unit* b, bool rev) {
 	int rv = a->address > b->address ? +1 : a->address < b->address ? -1 : 0;
+	return rev ? -rv : rv;
+}
+
+// シンボルのオフセットによる比較
+// (アドレスではないことに注意)
+int		compare_by_offset(const t_symbol_unit* a, const t_symbol_unit* b, bool rev) {
+	int rv = a->offset > b->offset ? +1 : a->offset < b->offset ? -1 : 0;
 	return rev ? -rv : rv;
 }
 
 int		compare_complex(const t_symbol_unit* a, const t_symbol_unit* b, bool rev) {
 	int rv = compare_by_name(a, b, rev);
 	if (rv == 0) {
-		rv = compare_by_address(a, b, false); // TODO: 環境依存?
+		rv = compare_by_offset(a, b, false); // TODO: 環境依存?
 	}
 	return rv;
 }
