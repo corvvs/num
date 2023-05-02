@@ -63,7 +63,11 @@ int main(int argc, char** argv) {
 		master.target_names = &default_target;
 	}
 
+	int status = 0;
 	for (master.i = 0; master.i < master.num_target; ++master.i) {
-		analyze_file(&master, master.target_names[master.i]);
+		if (!analyze_file(&master, master.target_names[master.i])) {
+			status = (status + 1) % 256;
+		}
 	}
+	return status;
 }
