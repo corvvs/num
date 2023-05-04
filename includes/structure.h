@@ -159,6 +159,7 @@ typedef struct s_target_file
 // 64ビットの解析用データ
 typedef struct s_analysis
 {
+	size_t				target_index;
 	t_target_file		target;      // 対象ファイル
 	int					error_no;    // このファイルで最後に発生したエラーの errno
 

@@ -27,7 +27,7 @@ void	extract_sections(t_master* m, t_analysis* analysis, const void* section_hea
 				break;
 			default:
 				// 何かがおかしい
-				print_error_by_message(m, "SOMETHING WRONG");
+				print_unrecoverable_error_by_message(m, analysis->target.path, "SOMETHING WRONG");
 				break;
 		}
 		section->head = analysis->target.head + section->offset;
@@ -56,29 +56,29 @@ void	extract_sections(t_master* m, t_analysis* analysis, const void* section_hea
 			section->name = NULL;
 		}
 		determine_section_category(m, analysis, section);
-		DEBUGINFO("section: %zu(%zx) -> %s(t:%llx)\t%s li:%llu\t%c%c%c%c%c%c%c%c%c%c%c%c%c%c %b\t%s",
-			i,
-			section->offset,
-			sectiontype_to_name(section->type), section->type,
-			section_category_to_name(section->category),
-			section->link,
-			(section->flags & SHF_WRITE)			? 'w' : '-',
-			(section->flags & SHF_ALLOC)			? 'a' : '-',
-			(section->flags & SHF_EXECINSTR)		? 'x' : '-',
-			(section->flags & SHF_MERGE)			? 'm' : '-',
-			(section->flags & SHF_STRINGS)			? 's' : '-',
-			(section->flags & SHF_INFO_LINK)		? 'i' : '-',
-			(section->flags & SHF_LINK_ORDER)		? 'l' : '-',
-			(section->flags & SHF_OS_NONCONFORMING)	? 'o' : '-',
-			(section->flags & SHF_GROUP)			? 'g' : '-',
-			(section->flags & SHF_TLS)				? 't' : '-',
-			(section->flags & SHF_MASKOS)			? 'k' : '-',
-			(section->flags & SHF_ORDERED)			? 'r' : '-',
-			(section->flags & SHF_EXCLUDE)			? 'e' : '-',
-			(section->flags & SHF_MASKPROC)			? 'p' : '-',
-			section->flags,
-			section->name
-		);
+		// DEBUGINFO("section: %zu(%zx) -> %s(t:%llx)\t%s li:%llu\t%c%c%c%c%c%c%c%c%c%c%c%c%c%c %b\t%s",
+		// 	i,
+		// 	section->offset,
+		// 	sectiontype_to_name(section->type), section->type,
+		// 	section_category_to_name(section->category),
+		// 	section->link,
+		// 	(section->flags & SHF_WRITE)			? 'w' : '-',
+		// 	(section->flags & SHF_ALLOC)			? 'a' : '-',
+		// 	(section->flags & SHF_EXECINSTR)		? 'x' : '-',
+		// 	(section->flags & SHF_MERGE)			? 'm' : '-',
+		// 	(section->flags & SHF_STRINGS)			? 's' : '-',
+		// 	(section->flags & SHF_INFO_LINK)		? 'i' : '-',
+		// 	(section->flags & SHF_LINK_ORDER)		? 'l' : '-',
+		// 	(section->flags & SHF_OS_NONCONFORMING)	? 'o' : '-',
+		// 	(section->flags & SHF_GROUP)			? 'g' : '-',
+		// 	(section->flags & SHF_TLS)				? 't' : '-',
+		// 	(section->flags & SHF_MASKOS)			? 'k' : '-',
+		// 	(section->flags & SHF_ORDERED)			? 'r' : '-',
+		// 	(section->flags & SHF_EXCLUDE)			? 'e' : '-',
+		// 	(section->flags & SHF_MASKPROC)			? 'p' : '-',
+		// 	section->flags,
+		// 	section->name
+		// );
 	}
 }
 
@@ -111,10 +111,10 @@ void	extract_symbols(t_master* m, t_analysis* analysis) {
 	for (size_t i_symbol_table = 0; i_symbol_table < analysis->num_symbol_table; ++i_symbol_table) {
 		t_table_pair*	node = &analysis->symbol_tables[i_symbol_table];
 		t_symbol_table_unit* symbol_table = &node->symbol_table;
-		DEBUGINFO("symbol table: %zu: %s %s",
-			i_symbol_table,
-			sectiontype_to_name(symbol_table->section->type),
-			symbol_table->section->name);
+		// DEBUGINFO("symbol table: %zu: %s %s",
+		// 	i_symbol_table,
+		// 	sectiontype_to_name(symbol_table->section->type),
+		// 	symbol_table->section->name);
 		if (symbol_table->section->type != SHT_SYMTAB) { continue; }
 		void*	current_symbol = symbol_table->head;
 		for (size_t k = 0; k < node->symbol_table.num_entries; ++k, ++i_symbol) {
@@ -128,7 +128,7 @@ void	extract_symbols(t_master* m, t_analysis* analysis) {
 					break;
 				default:
 					// 何かがおかしい
-					print_error_by_message(m, "SOMETHING WRONG");
+					print_unrecoverable_error_by_message(m, analysis->target.path, "SOMETHING WRONG");
 					break;
 			}
 			symbol_unit->offset = (size_t)(current_symbol - analysis->target.head);
@@ -213,12 +213,12 @@ void	sort_symbols(const t_master* m, t_analysis* analysis) {
 	}
 }
 
-void	destroy_analysis(t_analysis* analysis) {
+void	destroy_analysis(const t_master* m, t_analysis* analysis) {
 	free(analysis->sections);
 	free(analysis->symbol_tables);
 	free(analysis->symbols);
 	free(analysis->sorted_symbols);
-	destroy_target_file(&analysis->target);
+	destroy_target_file(m, &analysis->target);
 }
 
 static bool	should_print_address(const t_symbol_unit* symbol) {
@@ -265,11 +265,12 @@ void	print_symbols(const t_analysis* analysis) {
 bool	analyze_file(t_master* m, const char* target_path) {
 	t_analysis*	analysis = &m->current_analysis;
 	*analysis = (t_analysis){0};
+	analysis->target_index = m->i;
 
 	t_target_file*	target = &m->current_analysis.target;
 	// [ファイルの展開]
-	if (!deploy_target_file(target_path, target)) {
-		print_error_by_errno();
+	if (!mmap_target_file(m, target_path, target)) {
+		return false;
 	}
 
 	// この時点で, 対象ファイルは少なくとも 32ビットELFヘッダ以上のサイズを持っていることが確定している.
@@ -312,8 +313,12 @@ bool	analyze_file(t_master* m, const char* target_path) {
 	sort_symbols(m, analysis);
 
 	// [表示]
+	if (m->num_target > 1) {
+		yoyo_dprintf(STDOUT_FILENO, "\n");
+		yoyo_dprintf(STDOUT_FILENO, "%s:\n", target_path);
+	}
 	print_symbols(analysis);
 
-	destroy_analysis(analysis);
+	destroy_analysis(m, analysis);
 	return true;
 }

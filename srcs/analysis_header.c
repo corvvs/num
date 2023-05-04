@@ -23,7 +23,7 @@ t_target_category	determine_elf_type_from_header(const t_target_file* target) {
 		return TC_UNKNOWN;
 	}
 
-	DEBUGINFO("e_ident: %s", elf_header->e_ident);
+	// DEBUGINFO("e_ident: %s", elf_header->e_ident);
 	if (is_32bit(elf_header)) {
 		return TC_ELF32;
 	}
@@ -40,16 +40,16 @@ bool	analyze_header(t_analysis* analysis) {
 	analysis->category = category;
 	switch (category) {
 		case TC_ELF32:
-			DEBUGINFO("is 32bit: %p", target->head);
+			// DEBUGINFO("is 32bit: %p", target->head);
 			map_elf32_header(target->head, &analysis->header);
 			break;
 		case TC_ELF64:
-			DEBUGINFO("is 64bit: %p", target->head);
+			// DEBUGINFO("is 64bit: %p", target->head);
 			map_elf64_header(target->head, &analysis->header);
 			// analyze_64bit(&master);
 			break;
 		default:
-			DEBUGINFO("is unknown: %p", target->head);
+			// DEBUGINFO("is unknown: %p", target->head);
 			return false;
 	}
 	return true;

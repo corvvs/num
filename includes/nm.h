@@ -19,8 +19,8 @@
 # include "libft.h"
 
 // file.c
-bool	deploy_target_file(const char* path, t_target_file* target);
-void	destroy_target_file(const t_target_file* target);
+bool	mmap_target_file(const t_master* m, const char* path, t_target_file* target);
+void	destroy_target_file(const t_master* m, const t_target_file* target);
 
 // nm.c
 void	analyze_64bit(t_master* m);
@@ -52,8 +52,10 @@ void	debug_print_symbol(const t_symbol_unit* symbol);
 char*	yo_basename(const char* path);
 
 // print_utils.c
-void	print_error_by_errno();
-void	print_error_by_message(t_master* m, const char* message);
+void	print_recoverable_error_by_errno(const t_master* m, const char* path);
+void	print_recoverable_error_by_message(const t_master* m, const char* path, const char* message);
+void	print_unrecoverable_error_by_errno(const t_master* m, const char* path);
+void	print_unrecoverable_error_by_message(const t_master* m, const char* path, const char* message);
 void	print_spaces(int fd, uint64_t n);
 void	print_chars(int fd, char ch, uint64_t n);
 

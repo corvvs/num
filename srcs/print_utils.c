@@ -1,13 +1,28 @@
 #include "nm.h"
 
-void	print_error_by_errno() {
-	yoyo_dprintf(STDERR_FILENO, "%d, %s\n", errno, strerror(errno));
-	exit(1);
+void	print_recoverable_error_by_errno(const t_master* m, const char* path) {
+	print_recoverable_error_by_message(m, path, strerror(errno));
 }
 
-void	print_error_by_message(t_master* m, const char* message) {
-	(void)m;
-	yoyo_dprintf(STDERR_FILENO, "error: %s\n", message);
+void	print_recoverable_error_by_message(const t_master* m, const char* path, const char* message) {
+	if (path) {
+		yoyo_dprintf(STDERR_FILENO, "%s: '%s': %s\n", m->exec_name, path, message);
+	} else {
+		yoyo_dprintf(STDERR_FILENO, "%s: %s\n", m->exec_name, message);
+	}
+}
+
+
+void	print_unrecoverable_error_by_errno(const t_master* m, const char* path) {
+	print_unrecoverable_error_by_message(m, path, strerror(errno));
+}
+
+void	print_unrecoverable_error_by_message(const t_master* m, const char* path, const char* message) {
+	if (path) {
+		yoyo_dprintf(STDERR_FILENO, "%s: '%s': %s\n", m->exec_name, path, message);
+	} else {
+		yoyo_dprintf(STDERR_FILENO, "%s: %s\n", m->exec_name, message);
+	}
 	exit(1);
 }
 

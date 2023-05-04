@@ -28,7 +28,6 @@ CFLAGS		=	$(CCOREFLAGS) -D DEBUG -g -fsanitize=address -fsanitize=undefined
 RM			:=	rm -rf
 
 all:			$(NAME)
-	./$(NAME) a.out
 
 bonus:
 	$(MAKE) all WITH_BONUS=1
@@ -80,3 +79,6 @@ rt:	fclean t
 tall:	$(NAME)
 	$(MAKE) -C elfs
 
+.PHONY:	mall
+mall:	$(NAME)
+	$(MAKE) -C elfs mall
