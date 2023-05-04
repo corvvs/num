@@ -142,11 +142,7 @@ void	debug_print_symbol(const t_symbol_unit* symbol) {
 
 // symbol のシンボルグリフを決定する
 void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_symbol_unit* symbol) {
-	(void)m;
-	(void)analysis;
-	(void)symbol;
-
-	debug_print_symbol(symbol);
+	// debug_print_symbol(symbol);
 
 	t_visibility	visibility = infer_symbol_visibility(symbol);
 

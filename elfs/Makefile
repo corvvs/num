@@ -14,6 +14,8 @@ CFLAGS	:=
 .PHONY:	all
 all:	tall
 
+# ** single test **
+
 none:	none.c
 	$(CC) $(CFLAGS) none.c -o $@
 
@@ -60,3 +62,8 @@ tall:	$(NAMES)
 	@mkdir -p results
 	@mkdir -p results/diff
 	ruby test.rb $^
+
+# ** multiple test **
+
+.PHONY: mallo
+	

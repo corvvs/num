@@ -20,7 +20,7 @@ bool	mmap_target_file(const t_master* m, const char* path, t_target_file* target
 		return false;
 	}
 
-	DEBUGINFO("size: %zu", st.st_size);
+	// DEBUGINFO("size: %zu", st.st_size);
 	size_t size = st.st_size;
 	if (size < sizeof(Elf32_Ehdr)) {
 		// サイズ小さすぎ

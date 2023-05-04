@@ -1,6 +1,5 @@
 ELFS = ARGV
 
-
 Options = [
   "",
   "-a",
@@ -40,12 +39,13 @@ ELFS.each_with_index{ |elf, i|
   some_failed = false
   Options.each_with_index{ |opt, j|
     m = j + 1
+    # ディレクトリ, ファイル名
     dir = "results/#{elf}_#{opt.split(" ").join("_")}"
     real_file = "#{dir}/real.txt"
     mine_file = "#{dir}/mine.txt"
     diff_file = "#{dir}/compare.diff"
 
-    `mkdir -p #{dir}; nm #{opt} #{elf} > #{real_file}; ../ft_nm #{opt} #{elf} 2>/dev/null > #{mine_file}`
+    `mkdir -p #{dir}; nm #{opt} #{elf} > #{real_file} 2>&1; ../ft_nm #{opt} #{elf} > #{mine_file} 2>&1`
     diff = `diff -u #{real_file} #{mine_file}`
 
     ok = diff == ""
