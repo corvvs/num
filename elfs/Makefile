@@ -65,5 +65,6 @@ tall:	$(NAMES)
 
 # ** multiple test **
 
-.PHONY: mallo
-	
+.PHONY: mall
+mall:	malloc
+	ruby multi.rb

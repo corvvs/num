@@ -45,7 +45,7 @@ ELFS.each_with_index{ |elf, i|
     mine_file = "#{dir}/mine.txt"
     diff_file = "#{dir}/compare.diff"
 
-    `mkdir -p #{dir}; nm #{opt} #{elf} > #{real_file} 2>&1; ../ft_nm #{opt} #{elf} > #{mine_file} 2>&1`
+    `mkdir -p #{dir}; cp /usr/bin/nm mm; ./mm #{opt} #{elf} > #{real_file} 2>&1; cp ../ft_nm mm; ./mm #{opt} #{elf} > #{mine_file} 2>&1`
     diff = `diff -u #{real_file} #{mine_file}`
 
     ok = diff == ""

@@ -79,3 +79,6 @@ rt:	fclean t
 tall:	$(NAME)
 	$(MAKE) -C elfs
 
+.PHONY:	mall
+mall:	$(NAME)
+	$(MAKE) -C elfs mall
