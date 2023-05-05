@@ -39,6 +39,10 @@ bool	mmap_target_file(const t_master* m, const char* path, t_target_file* target
 	}
 
 	size_t size = st.st_size;
+	if (size == 0) {
+		// サイズが0の場合は何も表示しないでエラー終了
+		return false;
+	}
 	if (size < sizeof(Elf32_Ehdr)) {
 		// サイズ小さすぎ
 		// TODO: なんか出す
