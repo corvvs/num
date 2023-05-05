@@ -27,7 +27,7 @@ void	extract_sections(t_master* m, t_analysis* analysis, const void* section_hea
 				break;
 			default:
 				// 何かがおかしい
-				print_unrecoverable_error_by_message(m, analysis->target.path, "SOMETHING WRONG");
+				print_unrecoverable_generic_error_by_message(m, analysis->target.path, "SOMETHING WRONG");
 				break;
 		}
 		section->head = analysis->target.head + section->offset;
@@ -128,7 +128,7 @@ void	extract_symbols(t_master* m, t_analysis* analysis) {
 					break;
 				default:
 					// 何かがおかしい
-					print_unrecoverable_error_by_message(m, analysis->target.path, "SOMETHING WRONG");
+					print_unrecoverable_generic_error_by_message(m, analysis->target.path, "SOMETHING WRONG");
 					break;
 			}
 			symbol_unit->offset = (size_t)(current_symbol - analysis->target.head);
@@ -275,7 +275,7 @@ bool	analyze_file(t_master* m, const char* target_path) {
 
 	// この時点で, 対象ファイルは少なくとも 32ビットELFヘッダ以上のサイズを持っていることが確定している.
 	// [32/64ビットかどうかを判定し, 結果に応じてヘッダのマッピングを行う]
-	if (!analyze_header(analysis)) {
+	if (!analyze_header(m, analysis)) {
 		return false;
 	}
 

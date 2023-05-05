@@ -1,10 +1,10 @@
 #include "nm.h"
 
-void	print_recoverable_error_by_errno(const t_master* m, const char* path) {
-	print_recoverable_error_by_message(m, path, strerror(errno));
+void	print_recoverable_generic_error_by_errno(const t_master* m, const char* path) {
+	print_recoverable_generic_error_by_message(m, path, strerror(errno));
 }
 
-void	print_recoverable_error_by_message(const t_master* m, const char* path, const char* message) {
+void	print_recoverable_generic_error_by_message(const t_master* m, const char* path, const char* message) {
 	if (path) {
 		yoyo_dprintf(STDERR_FILENO, "%s: '%s': %s\n", m->exec_name, path, message);
 	} else {
@@ -12,12 +12,11 @@ void	print_recoverable_error_by_message(const t_master* m, const char* path, con
 	}
 }
 
-
-void	print_unrecoverable_error_by_errno(const t_master* m, const char* path) {
-	print_unrecoverable_error_by_message(m, path, strerror(errno));
+void	print_unrecoverable_generic_error_by_errno(const t_master* m, const char* path) {
+	print_unrecoverable_generic_error_by_message(m, path, strerror(errno));
 }
 
-void	print_unrecoverable_error_by_message(const t_master* m, const char* path, const char* message) {
+void	print_unrecoverable_generic_error_by_message(const t_master* m, const char* path, const char* message) {
 	if (path) {
 		yoyo_dprintf(STDERR_FILENO, "%s: '%s': %s\n", m->exec_name, path, message);
 	} else {

@@ -34,22 +34,19 @@ t_target_category	determine_elf_type_from_header(const t_target_file* target) {
 }
 
 
-bool	analyze_header(t_analysis* analysis) {
+bool	analyze_header(const t_master* m, t_analysis* analysis) {
 	const t_target_file* target = &analysis->target;
 	t_target_category	category = determine_elf_type_from_header(target);
 	analysis->category = category;
 	switch (category) {
 		case TC_ELF32:
-			// DEBUGINFO("is 32bit: %p", target->head);
 			map_elf32_header(target->head, &analysis->header);
 			break;
 		case TC_ELF64:
-			// DEBUGINFO("is 64bit: %p", target->head);
 			map_elf64_header(target->head, &analysis->header);
-			// analyze_64bit(&master);
 			break;
 		default:
-			// DEBUGINFO("is unknown: %p", target->head);
+			print_recoverable_generic_error_by_message(m, target->path, "file format not recognized");
 			return false;
 	}
 	return true;

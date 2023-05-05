@@ -40,7 +40,7 @@ const t_section_unit*	get_referencing_section(const t_master* m, const t_analysi
 bool	analyze_file(t_master* m, const char* target_path);
 
 // analysis_header.c
-bool	analyze_header(t_analysis* analysis);
+bool	analyze_header(const t_master* m, t_analysis* analysis);
 
 // symbol.c
 void	determine_section_category(const t_master* m, const t_analysis* analysis, t_section_unit* section);
@@ -52,10 +52,10 @@ void	debug_print_symbol(const t_symbol_unit* symbol);
 char*	yo_basename(const char* path);
 
 // print_utils.c
-void	print_recoverable_error_by_errno(const t_master* m, const char* path);
-void	print_recoverable_error_by_message(const t_master* m, const char* path, const char* message);
-void	print_unrecoverable_error_by_errno(const t_master* m, const char* path);
-void	print_unrecoverable_error_by_message(const t_master* m, const char* path, const char* message);
+void	print_recoverable_generic_error_by_errno(const t_master* m, const char* path);
+void	print_recoverable_generic_error_by_message(const t_master* m, const char* path, const char* message);
+void	print_unrecoverable_generic_error_by_errno(const t_master* m, const char* path);
+void	print_unrecoverable_generic_error_by_message(const t_master* m, const char* path, const char* message);
 void	print_spaces(int fd, uint64_t n);
 void	print_chars(int fd, char ch, uint64_t n);
 
