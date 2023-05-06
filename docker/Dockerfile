@@ -9,3 +9,4 @@ RUN apt-get install -y git
 RUN apt-get install -y bsdmainutils
 RUN apt-get install -y file
 RUN apt-get install -y ruby
+RUN apt-get install -y vim-common

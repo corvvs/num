@@ -69,5 +69,7 @@ int main(int argc, char** argv) {
 			status = (status + 1) % 256;
 		}
 	}
+	// DEBUGOUT("sizeof(t_elf_32_header): %zu",  sizeof(t_elf_32_header));
+	// DEBUGOUT("sizeof(t_elf_64_header): %zu",  sizeof(t_elf_64_header));
 	return status;
 }
