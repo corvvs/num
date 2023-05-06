@@ -296,6 +296,7 @@ bool	analyze_file(t_master* m, const char* target_path) {
 	if (!extract_sections(m, analysis, section_header_table)) {
 		return false;
 	}
+	// DEBUGOUT("analysis->num_symbol_table: %zu", analysis->num_symbol_table);
 
 	// シンボルユニット配列を用意する
 	if (analysis->num_symbol_table == 0) {
@@ -326,8 +327,11 @@ bool	analyze_file(t_master* m, const char* target_path) {
 		yoyo_dprintf(STDOUT_FILENO, "\n");
 		yoyo_dprintf(STDOUT_FILENO, "%s:\n", target_path);
 	}
-	print_symbols(analysis);
-
+	if (analysis->num_symbol_effective > 0) {
+		print_symbols(analysis);
+	} else {
+		yoyo_dprintf(STDERR_FILENO, "%s: %s: %s\n", m->exec_name, target->path, "no symbols");
+	}
 	destroy_analysis(m, analysis);
 	return true;
 }
