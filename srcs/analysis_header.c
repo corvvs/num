@@ -36,6 +36,17 @@ static bool	is_64bit(const t_elf_identify e_ident) {
 	return PICK_E_IDENT(e_ident, EI_CLASS) == ELFCLASS64;
 }
 
+static t_endian	get_elf_endian(const t_elf_identify e_ident) {
+	switch (PICK_E_IDENT(e_ident, EI_DATA)) {
+		case ELFDATA2LSB:
+			return END_LITTLE;
+		case ELFDATA2MSB:
+			return END_BIG;
+		default:
+			return END_UNKNOWN;
+	}
+}
+
 static t_target_category	get_elf_class(const t_elf_identify e_ident) {
 	if (is_32bit(e_ident)) {
 		return TC_ELF32;
@@ -72,14 +83,20 @@ bool	analyze_header(const t_master* m, t_analysis* analysis) {
 		return false;
 	}
 	const t_elf_identify	e_ident = (t_elf_identify)analysis->target.head;
+	analysis->endian = get_elf_endian(e_ident);
+	if (analysis->endian == END_UNKNOWN) {
+		print_recoverable_file_error_by_message(m, target->path, "file format not recognized");
+		return false;
+	}
+	analysis->system_endian = m->system_endian;
 	const t_target_category	category = get_elf_class(e_ident);
 	analysis->category = category;
 	switch (category) {
 		case TC_ELF32:
-			map_elf32_header(target->head, &analysis->header);
+			map_elf32_header(analysis, target->head, &analysis->header);
 			break;
 		case TC_ELF64:
-			map_elf64_header(target->head, &analysis->header);
+			map_elf64_header(analysis, target->head, &analysis->header);
 			break;
 		default:
 			print_recoverable_file_error_by_message(m, target->path, "file format not recognized");

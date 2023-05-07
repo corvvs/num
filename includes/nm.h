@@ -26,8 +26,8 @@ void	destroy_target_file(const t_master* m, const t_target_file* target);
 void	analyze_64bit(t_master* m);
 
 // structure_mapping.c
-void	map_elf64_header(const t_elf_64_header* defined, t_object_header* original);
-void	map_elf32_header(const t_elf_32_header* defined, t_object_header* original);
+void	map_elf64_header(const t_analysis* analysis, const t_elf_64_header* defined, t_object_header* original);
+void	map_elf32_header(const t_analysis* analysis, const t_elf_32_header* defined, t_object_header* original);
 void	map_elf64_section_header(const t_elf_64_section_header* defined, t_section_unit* original);
 void	map_elf32_section_header(const t_elf_32_section_header* defined, t_section_unit* original);
 void	map_elf64_symbol(const t_elf_64_symbol* defined, t_symbol_unit* original);
@@ -65,6 +65,8 @@ int	yoyo_dprintf(int fd, const char* format, ...);
 int	yoyo_print_direct(int fd, const void* data, size_t size);
 
 // names.c
+const char*	objtype_to_name(int value);
+const char*	machinetype_to_name(int value);
 const char*	elfclass_to_name(int value);
 const char*	sectiontype_to_name(int value);
 const char*	symbinding_to_name(int value);
@@ -74,7 +76,15 @@ const char* symbol_visibility_to_name(uint64_t value);
 
 // assert.c
 void	yoyo_assert(const char* strexp, bool exp, const char* file, unsigned int line, const char* func);
-#define YOYO_ASSERT(exp) yoyo_assert(#exp, exp, __FILE__, __LINE__, __func__)
+# define YOYO_ASSERT(exp) yoyo_assert(#exp, exp, __FILE__, __LINE__, __func__)
+
+// endian.c
+uint16_t swap_2byte(uint16_t value);
+uint32_t swap_4byte(uint32_t value);
+uint64_t swap_8byte(uint64_t value);
+
+# define SWAP_BYTE(value) (sizeof(value) < 2 ? (value) : sizeof(value) < 4 ? swap_2byte(value) : sizeof(value) < 8 ? swap_4byte(value) : swap_8byte(value))
+# define SWAP_NEEDED(analysis, value) (analysis->system_endian == analysis->endian ? (value) : SWAP_BYTE(value))
 
 #endif
 
