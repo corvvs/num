@@ -3,21 +3,24 @@
 // 定義済み構造体を独自構造体にマップする。
 
 // ELF64ヘッダ構造体をオブジェクトヘッダ構造体にマップする
-void	map_elf64_header(const t_elf_64_header* defined, t_object_header* original) {
-	original->hsize = defined->e_ehsize;
-	original->shoff = defined->e_shoff;
-	original->shentsize = defined->e_shentsize;
-	original->shnum = defined->e_shnum;
-	original->shstrndx = defined->e_shstrndx;
+void	map_elf64_header(const t_analysis* analysis, const t_elf_64_header* defined, t_object_header* original) {
+	// DEBUGOUT("e_ident:\t%p", &defined->e_ident);
+	// DEBUGOUT("e_type:\t%s", objtype_to_name(defined->e_type));
+	// DEBUGOUT("e_machine:\t%s", machinetype_to_name(defined->e_machine));
+	original->hsize		= SWAP_NEEDED(analysis, defined->e_ehsize);
+	original->shoff		= SWAP_NEEDED(analysis, defined->e_shoff);
+	original->shentsize	= SWAP_NEEDED(analysis, defined->e_shentsize);
+	original->shnum		= SWAP_NEEDED(analysis, defined->e_shnum);
+	original->shstrndx	= SWAP_NEEDED(analysis, defined->e_shstrndx);
 }
 
 // ELF32ヘッダ構造体をオブジェクトヘッダ構造体にマップする
-void	map_elf32_header(const t_elf_32_header* defined, t_object_header* original) {
-	original->hsize = defined->e_ehsize;
-	original->shoff = defined->e_shoff;
-	original->shentsize = defined->e_shentsize;
-	original->shnum = defined->e_shnum;
-	original->shstrndx = defined->e_shstrndx;
+void	map_elf32_header(const t_analysis* analysis, const t_elf_32_header* defined, t_object_header* original) {
+	original->hsize		= SWAP_NEEDED(analysis, defined->e_ehsize);
+	original->shoff		= SWAP_NEEDED(analysis, defined->e_shoff);
+	original->shentsize	= SWAP_NEEDED(analysis, defined->e_shentsize);
+	original->shnum		= SWAP_NEEDED(analysis, defined->e_shnum);
+	original->shstrndx	= SWAP_NEEDED(analysis, defined->e_shstrndx);
 }
 
 // ELF64セクションヘッダ構造体をセクション構造体にマップする

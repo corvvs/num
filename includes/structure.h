@@ -10,13 +10,13 @@
 struct s_section_unit;
 
 // type alias
-typedef Elf64_Ehdr t_elf_64_header;
-typedef Elf64_Shdr t_elf_64_section_header;
-typedef Elf64_Sym t_elf_64_symbol;
+typedef Elf64_Ehdr	t_elf_64_header;
+typedef Elf64_Shdr	t_elf_64_section_header;
+typedef Elf64_Sym	t_elf_64_symbol;
 
-typedef Elf32_Ehdr t_elf_32_header;
-typedef Elf32_Shdr t_elf_32_section_header;
-typedef Elf32_Sym t_elf_32_symbol;
+typedef Elf32_Ehdr	t_elf_32_header;
+typedef Elf32_Shdr	t_elf_32_section_header;
+typedef Elf32_Sym	t_elf_32_symbol;
 
 typedef enum e_target_category
 {
@@ -139,12 +139,18 @@ typedef struct s_symbol_list_node
 	struct s_symbol_list_node *next;
 } t_table_pair;
 
+typedef enum	e_endian {
+	END_LITTLE,
+	END_BIG,
+	END_UNKNOWN,
+}	t_endian;
+
 typedef struct s_object_header {
-	size_t	hsize;     // ヘッダのサイズ
-	size_t	shoff;     // シンボルヘッダーテーブルのファイルオフセット
-	size_t	shentsize; // シンボルヘッダーテーブルの要素サイズ
-	size_t	shnum;     // シンボルヘッダーテーブルの要素数
-	size_t	shstrndx;  // セクション名を持つ文字列テーブルセクションのインデックス
+	size_t		hsize;     // ヘッダのサイズ
+	size_t		shoff;     // シンボルヘッダーテーブルのファイルオフセット
+	size_t		shentsize; // シンボルヘッダーテーブルの要素サイズ
+	size_t		shnum;     // シンボルヘッダーテーブルの要素数
+	size_t		shstrndx;  // セクション名を持つ文字列テーブルセクションのインデックス
 } t_object_header;
 
 typedef struct s_target_file
@@ -164,6 +170,8 @@ typedef struct s_analysis
 	int					error_no;    // このファイルで最後に発生したエラーの errno
 
 	t_target_category	category;
+	t_endian			system_endian;
+	t_endian			endian;
 	
 	t_object_header		header;      // このオブジェクトファイル(ELFファイル)のヘッダ情報
 	
@@ -198,6 +206,7 @@ typedef struct s_master
 {
 	const char*	exec_name;            // 実行ファイル名
 	t_option		option;           // オプション情報
+	t_endian		system_endian;    // 現在の処理系のエンディアン
 	size_t			num_target;       // 対象ファイル数
 	const char**	target_names;     // 対象ファイルの名前の配列; 要素数は num_target に等しい
 	size_t			i;                // 現在解析しているファイルのインデックス

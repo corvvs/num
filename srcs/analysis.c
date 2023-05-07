@@ -12,7 +12,7 @@ static uint64_t	number_width(uint64_t i, uint32_t base) {
 	return n;
 }
 
-void	extract_sections(t_master* m, t_analysis* analysis, const void* section_header_table) {
+bool	extract_sections(t_master* m, t_analysis* analysis, const void* section_header_table) {
 	const void* current_header = section_header_table;
 	for (size_t i = 0; i < analysis->num_section; ++i) {
 		t_section_unit*	section = &analysis->sections[i];
@@ -27,8 +27,8 @@ void	extract_sections(t_master* m, t_analysis* analysis, const void* section_hea
 				break;
 			default:
 				// 何かがおかしい
-				print_unrecoverable_error_by_message(m, analysis->target.path, "SOMETHING WRONG");
-				break;
+				print_unrecoverable_generic_error_by_message(m, analysis->target.path, "SOMETHING WRONG");
+				return false;
 		}
 		section->head = analysis->target.head + section->offset;
 
@@ -43,7 +43,6 @@ void	extract_sections(t_master* m, t_analysis* analysis, const void* section_hea
 			case SHT_DYNSYM:
 				analysis->num_symbol_table += 1;
 		}
-
 		current_header += analysis->header.shentsize;
 	}
 
@@ -80,6 +79,7 @@ void	extract_sections(t_master* m, t_analysis* analysis, const void* section_hea
 		// 	section->name
 		// );
 	}
+	return true;
 }
 
 void extract_symbol_tables(t_analysis* analysis) {
@@ -128,7 +128,7 @@ void	extract_symbols(t_master* m, t_analysis* analysis) {
 					break;
 				default:
 					// 何かがおかしい
-					print_unrecoverable_error_by_message(m, analysis->target.path, "SOMETHING WRONG");
+					print_unrecoverable_generic_error_by_message(m, analysis->target.path, "SOMETHING WRONG");
 					break;
 			}
 			symbol_unit->offset = (size_t)(current_symbol - analysis->target.head);
@@ -262,20 +262,10 @@ void	print_symbols(const t_analysis* analysis) {
 	}
 }
 
-bool	analyze_file(t_master* m, const char* target_path) {
-	t_analysis*	analysis = &m->current_analysis;
-	*analysis = (t_analysis){0};
-	analysis->target_index = m->i;
-
-	t_target_file*	target = &m->current_analysis.target;
-	// [ファイルの展開]
-	if (!mmap_target_file(m, target_path, target)) {
-		return false;
-	}
-
+static bool	analyze_mapped_region(t_master* m, t_analysis*	analysis) {
 	// この時点で, 対象ファイルは少なくとも 32ビットELFヘッダ以上のサイズを持っていることが確定している.
 	// [32/64ビットかどうかを判定し, 結果に応じてヘッダのマッピングを行う]
-	if (!analyze_header(analysis)) {
+	if (!analyze_header(m, analysis)) {
 		return false;
 	}
 
@@ -283,17 +273,25 @@ bool	analyze_file(t_master* m, const char* target_path) {
 	void* current_header = analysis->target.head + analysis->header.shoff;
 	const void* section_header_table = current_header;
 	size_t shsize = analysis->header.shnum * analysis->header.shentsize;
-	YOYO_ASSERT(analysis->header.shoff + shsize <= analysis->target.size);
+	if (analysis->header.shoff + shsize > analysis->target.size) {
+		yoyo_dprintf(STDERR_FILENO, "%s: %s: %s\n", m->exec_name, analysis->target.path, "file format not recognized");
+		return false;
+	}
 
 	// [セクション配列を用意する]
 	analysis->num_section = analysis->header.shnum;
 	analysis->sections = malloc(sizeof(t_section_unit) * analysis->num_section);
 	YOYO_ASSERT(analysis->sections != NULL);
 	analysis->num_symbol_table = 0;
-	extract_sections(m, analysis, section_header_table);
+	if (!extract_sections(m, analysis, section_header_table)) {
+		return false;
+	}
 
 	// シンボルユニット配列を用意する
-	YOYO_ASSERT(analysis->num_symbol_table > 0);
+	if (analysis->num_symbol_table == 0) {
+		yoyo_dprintf(STDERR_FILENO, "%s: %s: %s\n", m->exec_name, analysis->target.path, "no symbols");
+		return false;
+	}
 	analysis->symbol_tables = malloc(sizeof(t_table_pair) * analysis->num_symbol_table);
 	YOYO_ASSERT(analysis->symbol_tables != NULL);
 	
@@ -315,10 +313,27 @@ bool	analyze_file(t_master* m, const char* target_path) {
 	// [表示]
 	if (m->num_target > 1) {
 		yoyo_dprintf(STDOUT_FILENO, "\n");
-		yoyo_dprintf(STDOUT_FILENO, "%s:\n", target_path);
+		yoyo_dprintf(STDOUT_FILENO, "%s:\n", analysis->target.path);
 	}
-	print_symbols(analysis);
-
-	destroy_analysis(m, analysis);
+	if (analysis->num_symbol_effective > 0) {
+		print_symbols(analysis);
+	} else {
+		yoyo_dprintf(STDERR_FILENO, "%s: %s: %s\n", m->exec_name, analysis->target.path, "no symbols");
+	}
 	return true;
+}
+
+bool	analyze_file(t_master* m, const char* target_path) {
+	t_analysis*	analysis = &m->current_analysis;
+	*analysis = (t_analysis){0};
+	analysis->target_index = m->i;
+
+	t_target_file*	target = &m->current_analysis.target;
+	// [ファイルの展開]
+	if (!mmap_target_file(m, target_path, target)) {
+		return false;
+	}
+	bool	result = analyze_mapped_region(m, analysis);
+	destroy_analysis(m, analysis);
+	return result;
 }

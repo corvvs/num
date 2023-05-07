@@ -40,6 +40,12 @@ void	parse_option(t_master* m, int argc, char **argv) {
 	m->target_names = (const char**)(argv + i);
 }
 
+static t_endian	get_system_endian(void) {
+	uint32_t	x = 1;
+	uint8_t*	c = (uint8_t*)&x;
+	return *c ? END_LITTLE : END_BIG;
+}
+
 const char*	default_target = "a.out";
 
 int main(int argc, char** argv) {
@@ -52,6 +58,7 @@ int main(int argc, char** argv) {
 	t_master	master = {
 		.exec_name = get_exec_name(argv),
 		.option = {0},
+		.system_endian = get_system_endian(),
 	};
 
 	// [オプション解析]
