@@ -262,17 +262,7 @@ void	print_symbols(const t_analysis* analysis) {
 	}
 }
 
-bool	analyze_file(t_master* m, const char* target_path) {
-	t_analysis*	analysis = &m->current_analysis;
-	*analysis = (t_analysis){0};
-	analysis->target_index = m->i;
-
-	t_target_file*	target = &m->current_analysis.target;
-	// [ファイルの展開]
-	if (!mmap_target_file(m, target_path, target)) {
-		return false;
-	}
-
+static bool	analyze_mapped_region(t_master* m, t_analysis*	analysis) {
 	// この時点で, 対象ファイルは少なくとも 32ビットELFヘッダ以上のサイズを持っていることが確定している.
 	// [32/64ビットかどうかを判定し, 結果に応じてヘッダのマッピングを行う]
 	if (!analyze_header(m, analysis)) {
@@ -284,7 +274,7 @@ bool	analyze_file(t_master* m, const char* target_path) {
 	const void* section_header_table = current_header;
 	size_t shsize = analysis->header.shnum * analysis->header.shentsize;
 	if (analysis->header.shoff + shsize > analysis->target.size) {
-		yoyo_dprintf(STDERR_FILENO, "%s: %s: %s\n", m->exec_name, target->path, "file format not recognized");
+		yoyo_dprintf(STDERR_FILENO, "%s: %s: %s\n", m->exec_name, analysis->target.path, "file format not recognized");
 		return false;
 	}
 
@@ -296,12 +286,10 @@ bool	analyze_file(t_master* m, const char* target_path) {
 	if (!extract_sections(m, analysis, section_header_table)) {
 		return false;
 	}
-	// DEBUGOUT("analysis->num_symbol_table: %zu", analysis->num_symbol_table);
 
 	// シンボルユニット配列を用意する
 	if (analysis->num_symbol_table == 0) {
-		free(analysis->sections);
-		yoyo_dprintf(STDERR_FILENO, "%s: %s: %s\n", m->exec_name, target->path, "no symbols");
+		yoyo_dprintf(STDERR_FILENO, "%s: %s: %s\n", m->exec_name, analysis->target.path, "no symbols");
 		return false;
 	}
 	analysis->symbol_tables = malloc(sizeof(t_table_pair) * analysis->num_symbol_table);
@@ -325,13 +313,27 @@ bool	analyze_file(t_master* m, const char* target_path) {
 	// [表示]
 	if (m->num_target > 1) {
 		yoyo_dprintf(STDOUT_FILENO, "\n");
-		yoyo_dprintf(STDOUT_FILENO, "%s:\n", target_path);
+		yoyo_dprintf(STDOUT_FILENO, "%s:\n", analysis->target.path);
 	}
 	if (analysis->num_symbol_effective > 0) {
 		print_symbols(analysis);
 	} else {
-		yoyo_dprintf(STDERR_FILENO, "%s: %s: %s\n", m->exec_name, target->path, "no symbols");
+		yoyo_dprintf(STDERR_FILENO, "%s: %s: %s\n", m->exec_name, analysis->target.path, "no symbols");
 	}
-	destroy_analysis(m, analysis);
 	return true;
+}
+
+bool	analyze_file(t_master* m, const char* target_path) {
+	t_analysis*	analysis = &m->current_analysis;
+	*analysis = (t_analysis){0};
+	analysis->target_index = m->i;
+
+	t_target_file*	target = &m->current_analysis.target;
+	// [ファイルの展開]
+	if (!mmap_target_file(m, target_path, target)) {
+		return false;
+	}
+	bool	result = analyze_mapped_region(m, analysis);
+	destroy_analysis(m, analysis);
+	return result;
 }
