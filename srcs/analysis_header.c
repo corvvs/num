@@ -10,7 +10,6 @@ static bool	is_64bit(const Elf32_Ehdr* elf_header) {
 	return elf_header->e_ident[EI_CLASS] == ELFCLASS64;
 }
 
-
 t_target_category	determine_elf_type_from_header(const t_target_file* target) {
 	// unsigned char	e_ident[EI_NIDENT];
 	// の部分は 32/64 ビットで共通なので, 
@@ -46,7 +45,7 @@ bool	analyze_header(const t_master* m, t_analysis* analysis) {
 			map_elf64_header(target->head, &analysis->header);
 			break;
 		default:
-			print_recoverable_generic_error_by_message(m, target->path, "file format not recognized");
+			print_recoverable_file_error_by_message(m, target->path, "file format not recognized");
 			return false;
 	}
 	return true;

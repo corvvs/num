@@ -1,13 +1,5 @@
 #include "nm.h"
 
-static void	print_recoverable_file_error_by_message(const t_master* m, const char* path, const char* message) {
-	if (path) {
-		yoyo_dprintf(STDERR_FILENO, "%s: %s: %s\n", m->exec_name, path, message);
-	} else {
-		yoyo_dprintf(STDERR_FILENO, "%s: %s\n", m->exec_name, message);
-	}
-}
-
 // path にある対象ファイルをメモリ上に展開し, 情報を target にセットする.
 bool	mmap_target_file(const t_master* m, const char* path, t_target_file* target) {
 	int fd = open(path, O_RDONLY);

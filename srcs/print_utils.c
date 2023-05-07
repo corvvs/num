@@ -25,6 +25,14 @@ void	print_unrecoverable_generic_error_by_message(const t_master* m, const char*
 	exit(1);
 }
 
+void	print_recoverable_file_error_by_message(const t_master* m, const char* path, const char* message) {
+	if (path) {
+		yoyo_dprintf(STDERR_FILENO, "%s: %s: %s\n", m->exec_name, path, message);
+	} else {
+		yoyo_dprintf(STDERR_FILENO, "%s: %s\n", m->exec_name, message);
+	}
+}
+
 #define SPACES "                                                                                                   "
 
 void	print_spaces(int fd, uint64_t n) {

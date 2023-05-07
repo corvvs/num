@@ -56,6 +56,7 @@ void	print_recoverable_generic_error_by_errno(const t_master* m, const char* pat
 void	print_recoverable_generic_error_by_message(const t_master* m, const char* path, const char* message);
 void	print_unrecoverable_generic_error_by_errno(const t_master* m, const char* path);
 void	print_unrecoverable_generic_error_by_message(const t_master* m, const char* path, const char* message);
+void	print_recoverable_file_error_by_message(const t_master* m, const char* path, const char* message);
 void	print_spaces(int fd, uint64_t n);
 void	print_chars(int fd, char ch, uint64_t n);
 
