@@ -10,6 +10,7 @@ FILES	:=	\
 			symbol.c\
 			print_utils.c\
 			basic_utils.c\
+			endian.c\
 			names.c\
 			printf.c\
 			assert.c\

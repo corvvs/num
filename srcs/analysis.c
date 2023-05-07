@@ -20,10 +20,10 @@ bool	extract_sections(t_master* m, t_analysis* analysis, const void* section_hea
 		// [セクション配列を埋める]
 		switch (analysis->category) {
 			case TC_ELF32:
-				map_elf32_section_header(current_header, section);
+				map_elf32_section_header(analysis, current_header, section);
 				break;
 			case TC_ELF64:
-				map_elf64_section_header(current_header, section);
+				map_elf64_section_header(analysis, current_header, section);
 				break;
 			default:
 				// 何かがおかしい
@@ -121,10 +121,10 @@ void	extract_symbols(t_master* m, t_analysis* analysis) {
 			t_symbol_unit*	symbol_unit = &analysis->symbols[i_symbol];
 			switch (analysis->category) {
 				case TC_ELF32:
-					map_elf32_symbol(current_symbol, symbol_unit);
+					map_elf32_symbol(analysis, current_symbol, symbol_unit);
 					break;
 				case TC_ELF64:
-					map_elf64_symbol(current_symbol, symbol_unit);
+					map_elf64_symbol(analysis, current_symbol, symbol_unit);
 					break;
 				default:
 					// 何かがおかしい
