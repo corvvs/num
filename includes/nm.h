@@ -28,8 +28,8 @@ void	analyze_64bit(t_master* m);
 // structure_mapping.c
 void	map_elf64_header(const t_analysis* analysis, const t_elf_64_header* defined, t_object_header* original);
 void	map_elf32_header(const t_analysis* analysis, const t_elf_32_header* defined, t_object_header* original);
-void	map_elf64_section_header(const t_elf_64_section_header* defined, t_section_unit* original);
-void	map_elf32_section_header(const t_elf_32_section_header* defined, t_section_unit* original);
+void	map_elf64_section_header(const t_analysis* analysis, const t_elf_64_section_header* defined, t_section_unit* original);
+void	map_elf32_section_header(const t_analysis* analysis, const t_elf_32_section_header* defined, t_section_unit* original);
 void	map_elf64_symbol(const t_elf_64_symbol* defined, t_symbol_unit* original);
 void	map_elf32_symbol(const t_elf_32_symbol* defined, t_symbol_unit* original);
 void	map_section_to_symbol_table(const t_section_unit* section, t_symbol_table_unit* table);
