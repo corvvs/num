@@ -70,6 +70,7 @@ typedef struct s_symbol_unit {
 	uint64_t	bind;
 	uint64_t	type;
 	unsigned char	info;
+	uint64_t	other;
 	size_t		shndx;
 	uint64_t	value;
 	uint64_t	size;

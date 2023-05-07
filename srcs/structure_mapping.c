@@ -76,19 +76,19 @@ const t_section_unit*	get_referencing_section(const t_master* m, const t_analysi
 }
 
 // ELF64シンボル構造体をシンボル構造体にマップする
-void	map_elf64_symbol(const t_elf_64_symbol* defined, t_symbol_unit* original) {
-	original->address = defined->st_value;
-	original->name = NULL;
-	original->name_offset = defined->st_name;
-	original->symbol_griff = SYMGRIFF_UNKNOWN;
-
-	original->bind = ELF64_ST_BIND(defined->st_info);
-	original->type = ELF64_ST_TYPE(defined->st_info);
-	original->info = defined->st_info;
-	original->shndx = defined->st_shndx;
-	original->value = defined->st_value;
-	original->size = defined->st_size;
-	original->visibility = ELF64_ST_VISIBILITY(defined->st_other);
+void	map_elf64_symbol(const t_analysis* analysis, const t_elf_64_symbol* defined, t_symbol_unit* original) {
+	original->name          = NULL;
+	original->symbol_griff  = SYMGRIFF_UNKNOWN;
+	original->address       = SWAP_NEEDED(analysis, defined->st_value);
+	original->name_offset   = SWAP_NEEDED(analysis, defined->st_name);
+	original->info          = SWAP_NEEDED(analysis, defined->st_info);
+	original->shndx         = SWAP_NEEDED(analysis, defined->st_shndx);
+	original->value         = SWAP_NEEDED(analysis, defined->st_value);
+	original->size          = SWAP_NEEDED(analysis, defined->st_size);
+	original->other         = SWAP_NEEDED(analysis, defined->st_other);
+	original->bind          = ELF64_ST_BIND(original->info);
+	original->type          = ELF64_ST_TYPE(original->info);
+	original->visibility    = ELF64_ST_VISIBILITY(original->other);
 
 	original->is_debug = false;
 	original->is_global = false;
@@ -96,19 +96,19 @@ void	map_elf64_symbol(const t_elf_64_symbol* defined, t_symbol_unit* original) {
 }
 
 // ELF32シンボル構造体をシンボル構造体にマップする
-void	map_elf32_symbol(const t_elf_32_symbol* defined, t_symbol_unit* original) {
-	original->address = defined->st_value;
-	original->name = NULL;
-	original->name_offset = defined->st_name;
-	original->symbol_griff = SYMGRIFF_UNKNOWN;
-
-	original->bind = ELF32_ST_BIND(defined->st_info);
-	original->type = ELF32_ST_TYPE(defined->st_info);
-	original->info = defined->st_info;
-	original->shndx = defined->st_shndx;
-	original->value = defined->st_value;
-	original->size = defined->st_size;
-	original->visibility = ELF32_ST_VISIBILITY(defined->st_other);
+void	map_elf32_symbol(const t_analysis* analysis, const t_elf_32_symbol* defined, t_symbol_unit* original) {
+	original->name          = NULL;
+	original->symbol_griff  = SYMGRIFF_UNKNOWN;
+	original->address       = SWAP_NEEDED(analysis, defined->st_value);
+	original->name_offset   = SWAP_NEEDED(analysis, defined->st_name);
+	original->info          = SWAP_NEEDED(analysis, defined->st_info);
+	original->shndx         = SWAP_NEEDED(analysis, defined->st_shndx);
+	original->value         = SWAP_NEEDED(analysis, defined->st_value);
+	original->size          = SWAP_NEEDED(analysis, defined->st_size);
+	original->other         = SWAP_NEEDED(analysis, defined->st_other);
+	original->bind          = ELF32_ST_BIND(original->info);
+	original->type          = ELF32_ST_TYPE(original->info);
+	original->visibility    = ELF32_ST_VISIBILITY(original->other);
 
 	original->is_debug = false;
 	original->is_global = false;
