@@ -55,29 +55,6 @@ bool	extract_sections(t_master* m, t_analysis* analysis, const void* section_hea
 			section->name = NULL;
 		}
 		determine_section_category(m, analysis, section);
-		// DEBUGINFO("section: %zu(%zx) -> %s(t:%llx)\t%s li:%llu\t%c%c%c%c%c%c%c%c%c%c%c%c%c%c %b\t%s",
-		// 	i,
-		// 	section->offset,
-		// 	sectiontype_to_name(section->type), section->type,
-		// 	section_category_to_name(section->category),
-		// 	section->link,
-		// 	(section->flags & SHF_WRITE)			? 'w' : '-',
-		// 	(section->flags & SHF_ALLOC)			? 'a' : '-',
-		// 	(section->flags & SHF_EXECINSTR)		? 'x' : '-',
-		// 	(section->flags & SHF_MERGE)			? 'm' : '-',
-		// 	(section->flags & SHF_STRINGS)			? 's' : '-',
-		// 	(section->flags & SHF_INFO_LINK)		? 'i' : '-',
-		// 	(section->flags & SHF_LINK_ORDER)		? 'l' : '-',
-		// 	(section->flags & SHF_OS_NONCONFORMING)	? 'o' : '-',
-		// 	(section->flags & SHF_GROUP)			? 'g' : '-',
-		// 	(section->flags & SHF_TLS)				? 't' : '-',
-		// 	(section->flags & SHF_MASKOS)			? 'k' : '-',
-		// 	(section->flags & SHF_ORDERED)			? 'r' : '-',
-		// 	(section->flags & SHF_EXCLUDE)			? 'e' : '-',
-		// 	(section->flags & SHF_MASKPROC)			? 'p' : '-',
-		// 	section->flags,
-		// 	section->name
-		// );
 	}
 	return true;
 }
@@ -232,22 +209,32 @@ static bool should_print_symbol(const t_symbol_unit* symbol) {
 	return true;
 }
 
-void	print_symbols(const t_analysis* analysis) {
-	const size_t	addr_width = 16;
+static void print_symbol_address(const t_analysis* analysis, const t_symbol_unit* symbol) {
+	const size_t	addr_width = analysis->category == TC_ELF64 ? 16 : 8;
+	if (!should_print_address(symbol)) {
+		print_spaces(STDOUT_FILENO, addr_width);
+	} else {
+		uint32_t	width = number_width(symbol->address, 16);
+		if (width < addr_width) {
+			print_chars(STDOUT_FILENO, '0', addr_width - width);
+		}
+		yoyo_dprintf(STDOUT_FILENO, "%x", symbol->address);
+	}
+}
+
+static void	print_symbols(const t_analysis* analysis) {
 	for (size_t i = 0; i < analysis->num_symbol_effective; ++i) {
 		t_symbol_unit*	symbol = analysis->sorted_symbols[i];
-		if (!should_print_symbol(symbol)) { continue; }
+		if (!should_print_symbol(symbol)) {
+			// debug_print_symbol(symbol);
+			// if (symbol->relevant_section) {
+			// 	debug_print_section(symbol->relevant_section);
+			// }
+			continue;
+		}
 
 		// [アドレスの表示]
-		if (!should_print_address(symbol)) {
-			print_spaces(STDOUT_FILENO, addr_width);
-		} else {
-			uint32_t	width = number_width(symbol->address, 16);
-			if (width < addr_width) {
-				print_chars(STDOUT_FILENO, '0', addr_width - width);
-			}
-			yoyo_dprintf(STDOUT_FILENO, "%x", symbol->address);
-		}
+		print_symbol_address(analysis, symbol);
 		// [グリフの表示]
 		yoyo_dprintf(STDOUT_FILENO, " %c ", symbol->symbol_griff);
 		// [名前の表示]

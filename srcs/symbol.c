@@ -1,80 +1,5 @@
 #include "nm.h"
 
-void	determine_section_category(const t_master* m, const t_analysis* analysis, t_section_unit* section) {
-	(void)m;
-	(void)analysis;
-	switch (section->type) {
-		case SHT_NULL: {
-			// セクションヘッダテーブルの未使用エントリ
-			if (section->flags == 0) {
-				section->category = SC_UNDEFINED;
-				return;
-			}
-			break;
-		}
-		case SHT_INIT_ARRAY:
-		case SHT_FINI_ARRAY:
-		case SHT_PREINIT_ARRAY:
-		case SHT_NOTE:
-		case SHT_DYNAMIC:
-		case SHT_SYMTAB:
-		case SHT_DYNSYM:
-		case SHT_STRTAB:
-		case SHT_GNU_HASH:
-		case SHT_GNU_versym:
-		case SHT_GNU_verneed:
-		case SHT_GNU_LIBLIST:
-		case SHT_RELA:
-		case SHT_PROGBITS: {
-			// prefixed by ".debug"
-			if (ft_strncmp(section->name, ".debug", 6) == 0) {
-				section->category = SC_DEBUG;
-				return;
-			}
-			// プログラムデータ（コードやデータなど）を格納するセクション
-			if (FLAG_ALL(section->flags, SHF_EXECINSTR | SHF_ALLOC)) {
-				// フラグがSHF_EXECINSTR | SHF_ALLOC → テキストセクション
-				section->category = SC_TEXT;
-				return;
-			}
-			if (FLAG_ALL(section->flags, SHF_WRITE | SHF_ALLOC)) {
-				if (ft_strcmp(section->name, ".got") == 0) {
-					// フラグがSHF_WRITE | SHF_ALLOC, かつ名前が .got → GOTセクション
-					section->category = SC_GOT;
-					return;
-				}
-				// フラグがSHF_WRITE | SHF_ALLOC → データセクション
-				section->category = SC_DATA;
-				return;
-			}
-			if (FLAG_ALL(section->flags, SHF_WRITE | SHF_ALLOC | SHF_MERGE)) {
-				// フラグがSHF_WRITE | SHF_ALLOC | SHF_MERGE → スモールオブジェクトセクション
-				section->category = SC_SMALL;
-				return;
-			}
-			if (FLAG_ALL(section->flags, SHF_ALLOC)) {
-				// フラグがSHF_ALLOC → 読み取り専用データセクション
-				section->category = SC_READONLY;
-				return;
-			}
-			if (FLAG_ALL(section->flags, SHF_MERGE | SHF_STRINGS)) {
-				section->category = SC_MERGEABLE_CHARACTER;
-				return;
-			}
-			break;
-		}
-		case SHT_NOBITS: {
-			if (FLAG_ALL(section->flags, SHF_WRITE | SHF_ALLOC)) {
-				// フラグがSHF_WRITE | SHF_ALLOC → BSSセクション
-				section->category = SC_BSS;
-				return;
-			}
-			break;
-		}
-	}
-	section->category = SC_OTHER;
-}
-
 // シンボルの名前 name を決定する
 void	determine_symbol_name(
 	const t_master* m,
@@ -95,13 +20,10 @@ void	determine_symbol_name(
 }
 
 
-// 特定のセクションについて, シンボルグリフを決め打ちする
-static char	determine_special_section_griff(const t_section_unit* section) {
-	if (section->type == SHT_PROGBITS && ft_strcmp(section->name, ".note.GNU-stack") == 0) {
-		return 'n';
-	}
-	return SYMGRIFF_UNKNOWN;
-}
+// 特定のセクションについて, 対応するシンボルグリフを決め打ちする
+// static char	determine_special_section_griff(const t_section_unit* section) {
+// 	return SYMGRIFF_UNKNOWN;
+// }
 
 static t_visibility	infer_symbol_visibility(const t_symbol_unit* symbol) {
 	switch (symbol->bind) {
@@ -121,23 +43,6 @@ static t_visibility	infer_symbol_visibility(const t_symbol_unit* symbol) {
 	}
 	const bool maybe_global = symbol->name[0] != '_';
 	return maybe_global ? V_GLOBAL : V_LOCAL;
-}
-
-void	debug_print_symbol(const t_symbol_unit* symbol) {
-	DEBUGOUT("bind:%s type:%s\t|%s|\tscat:%s vis:%s shndx:%zu b:%llu t:%llu i:%u addr: %p value: %llx size: %llu",
-		symbinding_to_name(symbol->bind),
-		symtype_to_name(symbol->type),
-		symbol->name,
-		symbol->relevant_section ? section_category_to_name(symbol->relevant_section->category) : NULL,
-		symbol_visibility_to_name(symbol->visibility),
-		symbol->shndx,
-		symbol->bind,
-		symbol->type,
-		symbol->info,
-		symbol->address,
-		symbol->value,
-		symbol->size
-	);
 }
 
 // symbol のシンボルグリフを決定する
@@ -172,13 +77,13 @@ void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_sym
 		const t_section_unit* section = &analysis->sections[symbol->shndx];
 
 		// 特殊なセクションの場合はシンボルグリフを決め打ちする
-		{
-			char c = determine_special_section_griff(section);
-			if (c != SYMGRIFF_UNKNOWN) {
-				symbol->symbol_griff = c;
-				return;
-			}
-		}
+		// {
+		// 	char c = determine_special_section_griff(section);
+		// 	if (c != SYMGRIFF_UNKNOWN) {
+		// 		symbol->symbol_griff = c;
+		// 		return;
+		// 	}
+		// }
 
 		switch (section->category) {
 			case SC_DATA: {
