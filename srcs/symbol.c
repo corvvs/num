@@ -25,6 +25,9 @@ static char	determine_special_section_griff(const t_section_unit* section) {
 	if (section->type == SHT_PROGBITS && ft_strcmp(section->name, ".note.GNU-stack") == 0) {
 		return 'n';
 	}
+	if (ft_strcmp(section->name, ".ARM.attributes") == 0) {
+		return 'n';
+	}
 	return SYMGRIFF_UNKNOWN;
 }
 

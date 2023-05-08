@@ -226,10 +226,10 @@ static void	print_symbols(const t_analysis* analysis) {
 	for (size_t i = 0; i < analysis->num_symbol_effective; ++i) {
 		t_symbol_unit*	symbol = analysis->sorted_symbols[i];
 		if (!should_print_symbol(symbol)) {
-			debug_print_symbol(symbol);
-			if (symbol->relevant_section) {
-				debug_print_section(symbol->relevant_section);
-			}
+			// debug_print_symbol(symbol);
+			// if (symbol->relevant_section) {
+			// 	debug_print_section(symbol->relevant_section);
+			// }
 			continue;
 		}
 

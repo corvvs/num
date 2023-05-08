@@ -78,7 +78,6 @@ void	determine_section_category(const t_master* m, const t_analysis* analysis, t
 		default: {
 			if (SHT_LOPROC <= section->type && section->type <= SHT_HIPROC) {
 				// プロセッサ固有のセクション
-				yoyo_dprintf(STDERR_FILENO, "PROC SPECIFIC!! %llx\n", section->type);
 				t_section_category	category = determine_generic_section_category(section);
 				if (category != SC_OTHER) {
 					section->category = category;
