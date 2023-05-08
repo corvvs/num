@@ -21,15 +21,9 @@ void	determine_symbol_name(
 
 
 // 特定のセクションについて, 対応するシンボルグリフを決め打ちする
-static char	determine_special_section_griff(const t_section_unit* section) {
-	if (section->type == SHT_PROGBITS && ft_strcmp(section->name, ".note.GNU-stack") == 0) {
-		return 'n';
-	}
-	if (ft_strcmp(section->name, ".ARM.attributes") == 0) {
-		return 'n';
-	}
-	return SYMGRIFF_UNKNOWN;
-}
+// static char	determine_special_section_griff(const t_section_unit* section) {
+// 	return SYMGRIFF_UNKNOWN;
+// }
 
 static t_visibility	infer_symbol_visibility(const t_symbol_unit* symbol) {
 	switch (symbol->bind) {
@@ -83,13 +77,13 @@ void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_sym
 		const t_section_unit* section = &analysis->sections[symbol->shndx];
 
 		// 特殊なセクションの場合はシンボルグリフを決め打ちする
-		{
-			char c = determine_special_section_griff(section);
-			if (c != SYMGRIFF_UNKNOWN) {
-				symbol->symbol_griff = c;
-				return;
-			}
-		}
+		// {
+		// 	char c = determine_special_section_griff(section);
+		// 	if (c != SYMGRIFF_UNKNOWN) {
+		// 		symbol->symbol_griff = c;
+		// 		return;
+		// 	}
+		// }
 
 		switch (section->category) {
 			case SC_DATA: {

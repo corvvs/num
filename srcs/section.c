@@ -60,6 +60,10 @@ void	determine_section_category(const t_master* m, const t_analysis* analysis, t
 		case SHT_GNU_LIBLIST:
 		case SHT_RELA:
 		case SHT_PROGBITS: {
+			if (section->type == SHT_PROGBITS && ft_strcmp(section->name, ".note.GNU-stack") == 0) {
+				section->category = SC_MERGEABLE_CHARACTER;
+				return;
+			}
 			t_section_category	category = determine_generic_section_category(section);
 			if (category != SC_OTHER) {
 				section->category = category;
@@ -78,6 +82,10 @@ void	determine_section_category(const t_master* m, const t_analysis* analysis, t
 		default: {
 			if (SHT_LOPROC <= section->type && section->type <= SHT_HIPROC) {
 				// プロセッサ固有のセクション
+				if (ft_strcmp(section->name, ".ARM.attributes") == 0) {
+					section->category = SC_MERGEABLE_CHARACTER; // ほんまかー
+					return;
+				}
 				t_section_category	category = determine_generic_section_category(section);
 				if (category != SC_OTHER) {
 					section->category = category;
