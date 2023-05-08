@@ -42,11 +42,12 @@ bool	analyze_file(t_master* m, const char* target_path);
 // analysis_header.c
 bool	analyze_header(const t_master* m, t_analysis* analysis);
 
-// symbol.c
+// section.c
 void	determine_section_category(const t_master* m, const t_analysis* analysis, t_section_unit* section);
+
+// symbol.c
 void	determine_symbol_name(const t_master* m, const t_analysis* analysis, const t_table_pair* table_pair, t_symbol_unit* symbol);
 void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_symbol_unit* symbol);
-void	debug_print_symbol(const t_symbol_unit* symbol);
 
 // basic_utils.c
 char*	yo_basename(const char* path);
@@ -59,6 +60,8 @@ void	print_unrecoverable_generic_error_by_message(const t_master* m, const char*
 void	print_recoverable_file_error_by_message(const t_master* m, const char* path, const char* message);
 void	print_spaces(int fd, uint64_t n);
 void	print_chars(int fd, char ch, uint64_t n);
+void	debug_print_symbol(const t_symbol_unit* symbol);
+void	debug_print_section(const t_section_unit* section);
 
 // printf.c
 int	yoyo_dprintf(int fd, const char* format, ...);
