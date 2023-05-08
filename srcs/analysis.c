@@ -239,12 +239,6 @@ static void	print_symbols(const t_analysis* analysis) {
 		yoyo_dprintf(STDOUT_FILENO, " %c ", symbol->symbol_griff);
 		// [名前の表示]
 		yoyo_dprintf(STDOUT_FILENO, "%s", symbol->name);
-
-		// 追加情報
-		// {
-		// 	yoyo_dprintf(STDOUT_FILENO, " | %s | %s | %zu", symbinding_to_name(symbol->bind), symtype_to_name(symbol->type), symbol->shndx);
-		// }
-
 		yoyo_dprintf(STDOUT_FILENO, "\n", symbol->name);
 	}
 }

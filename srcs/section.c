@@ -58,6 +58,7 @@ void	determine_section_category(const t_master* m, const t_analysis* analysis, t
 		case SHT_GNU_versym:
 		case SHT_GNU_verneed:
 		case SHT_GNU_LIBLIST:
+		case SHT_REL:
 		case SHT_RELA:
 		case SHT_PROGBITS: {
 			if (section->type == SHT_PROGBITS && ft_strcmp(section->name, ".note.GNU-stack") == 0) {
