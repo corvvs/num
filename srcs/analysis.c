@@ -74,7 +74,30 @@ static bool	extract_sections(t_master* m, t_analysis* analysis) {
 	return true;
 }
 
-static void extract_symbol_tables(t_analysis* analysis) {
+// アドレス from, ELFファイルの中に収まっているかどうか
+static bool	is_mem_within_mmapped_region(
+	size_t elf_size,
+	size_t offset,
+	size_t size
+) {
+	// DEBUGOUT("elf_size: %zu, offset: %zu, size: %zu", elf_size, offset, size);
+	// サイズ がELFサイズを超えていないかどうかチェック
+	if (size > elf_size) { return false; }
+	// オフセット + サイズ がELFサイズを超えていないかどうかチェック
+	if (elf_size - size < offset) { return false; }
+	return true;
+}
+
+
+// セクションヘッダーテーブルの終端がELFファイルの中に収まっているかどうか
+static bool	is_sht_within_mmapped_region(const t_object_header* header, const t_target_file* target) {
+	// オーバーフローチェック
+	if (header->shentsize == 0 || header->shnum > SIZE_MAX / header->shentsize) { return false; }
+	const size_t shsize = header->shnum * header->shentsize;
+	return is_mem_within_mmapped_region(target->size, header->shoff, shsize);
+}
+
+static bool extract_symbol_tables(t_analysis* analysis) {
 	analysis->symbol_tables = malloc(sizeof(t_table_pair) * analysis->num_symbol_table);
 	YOYO_ASSERT(analysis->symbol_tables != NULL);
 	size_t	i_symbol_table = 0;
@@ -88,18 +111,27 @@ static void extract_symbol_tables(t_analysis* analysis) {
 				YOYO_ASSERT(string_table_index < analysis->num_section);
 				t_section_unit*	strtab_section = &analysis->sections[string_table_index];
 				t_table_pair* symbol_pair = &analysis->symbol_tables[i_symbol_table];
+				t_symbol_table_unit*	symtab = &symbol_pair->symbol_table;
+				t_string_table_unit*	strtab = &symbol_pair->string_table;
 
 				// [シンボルテーブルと文字列テーブルをペアにする]
-				map_section_to_symbol_table(section, &symbol_pair->symbol_table);
-				map_section_to_string_table(strtab_section, &symbol_pair->string_table);
-				analysis->num_symbol += symbol_pair->symbol_table.num_entries;
+				map_section_to_symbol_table(section, symtab);
+				if (!is_mem_within_mmapped_region(analysis->target.size, symtab->offset, symtab->total_size)) {
+					return false;
+				}
+				map_section_to_string_table(strtab_section, strtab);
+				if (!is_mem_within_mmapped_region(analysis->target.size, strtab->offset, strtab->total_size)) {
+					return false;
+				}
+				analysis->num_symbol += symtab->num_entries;
 				i_symbol_table += 1;
 			}
 		}
 	}
+	return true;
 }
 
-static void	extract_symbols(t_master* m, t_analysis* analysis) {
+static bool	extract_symbols(t_master* m, t_analysis* analysis) {
 	YOYO_ASSERT(analysis->num_symbol > 0);
 	analysis->symbols = malloc(sizeof(t_symbol_unit) * analysis->num_symbol);
 	YOYO_ASSERT(analysis->symbols != NULL);
@@ -108,15 +140,15 @@ static void	extract_symbols(t_master* m, t_analysis* analysis) {
 	analysis->num_symbol_effective = 0;
 	size_t i_symbol = 0;
 	for (size_t i_symbol_table = 0; i_symbol_table < analysis->num_symbol_table; ++i_symbol_table) {
-		t_table_pair*	node = &analysis->symbol_tables[i_symbol_table];
-		t_symbol_table_unit* symbol_table = &node->symbol_table;
-		// DEBUGINFO("symbol table: %zu: %s %s",
-		// 	i_symbol_table,
-		// 	sectiontype_to_name(symbol_table->section->type),
-		// 	symbol_table->section->name);
+		t_table_pair*			node = &analysis->symbol_tables[i_symbol_table];
+		t_symbol_table_unit*	symbol_table = &node->symbol_table;
 		if (symbol_table->section->type != SHT_SYMTAB) { continue; }
-		void*	current_symbol = symbol_table->head_addr;
+		void*					current_symbol = symbol_table->head_addr;
 		for (size_t k = 0; k < node->symbol_table.num_entries; ++k, ++i_symbol) {
+			const size_t	sec_offset = current_symbol - analysis->target.head_addr;
+			if (sec_offset > analysis->target.size) {
+				return false;
+			}
 			t_symbol_unit*	symbol_unit = &analysis->symbols[i_symbol];
 			switch (analysis->category) {
 				case TC_ELF32:
@@ -143,6 +175,7 @@ static void	extract_symbols(t_master* m, t_analysis* analysis) {
 			analysis->num_symbol_effective += 1;
 		}
 	}
+	return true;
 }
 
 // シンボル名による比較
@@ -276,18 +309,6 @@ static void	print_symbols(const t_master* m, const t_analysis* analysis) {
 	}
 }
 
-// セクションヘッダーテーブルの終端がELFファイルの中に収まっているかどうか
-static bool	is_sht_within_mmapped_region(const t_object_header* header, const t_target_file* target) {
-	// オーバーフローチェック
-	if (header->shentsize == 0 || header->shnum > SIZE_MAX / header->shentsize) { return false; }
-	const size_t shsize = header->shnum * header->shentsize;
-	// shsize がELFサイズを超えていないかどうかチェック
-	if (shsize > target->size) { return false; }
-	// shoff + shsize がELFサイズを超えていないかどうかチェック
-	if (target->size - shsize < header->shoff) { return false; }
-	return true;
-}
-
 static bool	analyze(t_master* m, t_analysis* analysis) {
 	// この時点で, 対象ファイルは少なくとも 32ビットELFヘッダ以上のサイズを持っていることが確定している.
 	// [32/64ビットかどうかを判定し, 結果に応じてヘッダのマッピングを行う]
@@ -313,7 +334,10 @@ static bool	analyze(t_master* m, t_analysis* analysis) {
 	}
 
 	// [シンボルテーブルがあったら, 対応する文字列テーブルとペアにして配列に入れていく]
-	extract_symbol_tables(analysis);
+	if (!extract_symbol_tables(analysis)) {
+		yoyo_dprintf(STDERR_FILENO, "%s: %s: %s\n", m->exec_name, analysis->target.path, "no symbols");
+		return false;
+	}
 
 	// [シンボルを配列化する]
 	extract_symbols(m, analysis);
