@@ -39,6 +39,11 @@ static bool	extract_sections(t_master* m, t_analysis* analysis) {
 		// [セクションが「セクション名文字列テーブル」だった場合, 控えておく]
 		if (analysis->header.shstrndx == i) {
 			analysis->section_name_str_table_index = i;
+			map_section_to_string_table(section, &analysis->section_name_str_table);
+			if (!analysis->section_name_str_table.is_terminated) {
+				print_recoverable_file_error_by_message(m, analysis->target.path, "file format not recognized");
+				return false;
+			}
 			analysis->found_section_name_str_table = true;
 		}
 		// [セクションが「シンボルテーブル」だった場合, カウントしておく]
@@ -49,12 +54,18 @@ static bool	extract_sections(t_master* m, t_analysis* analysis) {
 		}
 		current_header += analysis->header.shentsize;
 	}
+	// この時点で「セクション名文字列テーブル」が見つからなかった場合は失敗
+	if (!analysis->found_section_name_str_table) {
+		print_recoverable_file_error_by_message(m, analysis->target.path, "no symbols");
+		return false;
+	}
 
 	// セクション名文字列テーブルを使ってセクション名をセットする
+	const t_string_table_unit* sec_strtab = &analysis->section_name_str_table;
 	for (size_t i = 0; i < analysis->num_section; ++i) {
 		t_section_unit*	section = &analysis->sections[i];
 		if (analysis->found_section_name_str_table) {
-			section->name = analysis->sections[analysis->section_name_str_table_index].head_addr + section->name_offset;
+			section->name = sec_strtab->head_addr + section->name_offset;
 		} else {
 			section->name = NULL;
 		}
@@ -104,7 +115,7 @@ static void	extract_symbols(t_master* m, t_analysis* analysis) {
 		// 	sectiontype_to_name(symbol_table->section->type),
 		// 	symbol_table->section->name);
 		if (symbol_table->section->type != SHT_SYMTAB) { continue; }
-		void*	current_symbol = symbol_table->head;
+		void*	current_symbol = symbol_table->head_addr;
 		for (size_t k = 0; k < node->symbol_table.num_entries; ++k, ++i_symbol) {
 			t_symbol_unit*	symbol_unit = &analysis->symbols[i_symbol];
 			switch (analysis->category) {
