@@ -69,8 +69,9 @@ const t_section_unit*	get_referencing_section(const t_master* m, const t_analysi
 		case SHN_XINDEX:
 			break;
 		default:
-			YOYO_ASSERT(symbol->shndx < analysis->num_section);
-			return &analysis->sections[symbol->shndx];
+			if (symbol->shndx < analysis->num_section) {
+				return &analysis->sections[symbol->shndx];
+			}
 	}
 	return NULL;
 }
