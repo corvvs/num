@@ -106,7 +106,7 @@ typedef struct s_symbol_table_unit
 {
 	const t_section_unit*	section;
 	// 実際のシンボルテーブルの先頭アドレス
-	void *head;
+	void *head_addr;
 	// ELFファイル先頭からのオフセット
 	size_t offset;
 	// エントリー数
