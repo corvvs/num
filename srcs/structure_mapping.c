@@ -118,7 +118,7 @@ void	map_elf32_symbol(const t_analysis* analysis, const t_elf_32_symbol* defined
 // セクションユニット構造体をシンボルテーブル構造体にマップする
 void	map_section_to_symbol_table(const t_section_unit* section, t_symbol_table_unit* table) {
 	table->section = section;
-	table->head = section->head;
+	table->head = section->head_addr;
 	table->offset = section->offset;
 	table->entry_size = section->entsize;
 	table->total_size = section->size;
@@ -131,10 +131,20 @@ void	map_section_to_symbol_table(const t_section_unit* section, t_symbol_table_u
 
 // セクションユニット構造体を文字列テーブル構造体にマップする
 void	map_section_to_string_table(const t_section_unit* section, t_string_table_unit* table) {
+	// TODO: 境界チェックを行う
+	// - head_addr がマッピング領域内にあるか
+	// - head_addr + total_size がマッピング領域内にあるか
+
 	table->section = section;
-	table->head = section->head;
+	table->head_addr = section->head_addr;
 	table->offset = section->offset;
 	table->total_size = section->size;
+	if (table->total_size > 0) {
+		const char*	strtab = table->head_addr + table->total_size - 1;
+		table->is_terminated = *strtab == '\0';
+	} else {
+		table->is_terminated = false;
+	}
 }
 
 
