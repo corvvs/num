@@ -82,11 +82,11 @@ static bool	check_elf_header_consistency(const t_analysis* analysis) {
 	}
 	// shentsizeが十分なサイズを持っているかチェック
 	if (analysis->category == TC_ELF32) {
-		if (!IS_SIZE_SATISFIED(header->shentsize, t_elf_32_header)) {
+		if (!IS_SIZE_SATISFIED(header->shentsize, t_elf_32_section_header)) {
 			return false;
 		}
 	} else {
-		if (!IS_SIZE_SATISFIED(header->shentsize, t_elf_64_header)) {
+		if (!IS_SIZE_SATISFIED(header->shentsize, t_elf_64_section_header)) {
 			return false;
 		}
 	}
