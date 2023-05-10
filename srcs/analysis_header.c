@@ -74,6 +74,25 @@ static bool	check_elf_ident_consistency(const t_elf_identify e_ident) {
 	return true;
 }
 
+static bool	check_elf_header_consistency(const t_analysis* analysis) {
+	const t_object_header* header = &analysis->header;
+	// shentsizeのアライメントチェック
+	if (!is_size_mem_aligned(header->shentsize)) {
+		return false;
+	}
+	// shentsizeが十分なサイズを持っているかチェック
+	if (analysis->category == TC_ELF32) {
+		if (!IS_SIZE_SATISFIED(header->shentsize, t_elf_32_header)) {
+			return false;
+		}
+	} else {
+		if (!IS_SIZE_SATISFIED(header->shentsize, t_elf_64_header)) {
+			return false;
+		}
+	}
+	return true;
+}
+
 bool	analyze_header(const t_master* m, t_analysis* analysis) {
 	const t_target_file*	target = &analysis->target;
 	const t_elf_identify	e_ident = (t_elf_identify)target->head_addr;
@@ -103,6 +122,10 @@ bool	analyze_header(const t_master* m, t_analysis* analysis) {
 		default:
 			print_recoverable_file_error_by_message(m, target->path, "file format not recognized");
 			return false;
+	}
+	if (!check_elf_header_consistency(analysis)) {
+		print_recoverable_file_error_by_message(m, target->path, "file format not recognized");
+		return false;
 	}
 	return true;
 }
