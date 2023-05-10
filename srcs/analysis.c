@@ -12,8 +12,12 @@ static uint64_t	number_width(uint64_t i, uint32_t base) {
 	return n;
 }
 
-bool	extract_sections(t_master* m, t_analysis* analysis, const void* section_header_table) {
-	const void* current_header = section_header_table;
+static bool	extract_sections(t_master* m, t_analysis* analysis) {
+	analysis->num_section = analysis->header.shnum;
+	analysis->sections = malloc(sizeof(t_section_unit) * analysis->num_section);
+	YOYO_ASSERT(analysis->sections != NULL);
+	analysis->num_symbol_table = 0;
+	const void* current_header = analysis->target.head_addr + analysis->header.shoff;
 	for (size_t i = 0; i < analysis->num_section; ++i) {
 		t_section_unit*	section = &analysis->sections[i];
 
@@ -30,7 +34,7 @@ bool	extract_sections(t_master* m, t_analysis* analysis, const void* section_hea
 				print_unrecoverable_generic_error_by_message(m, analysis->target.path, "SOMETHING WRONG");
 				return false;
 		}
-		section->head = analysis->target.head + section->offset;
+		section->head_addr = analysis->target.head_addr + section->offset;
 
 		// [セクションが「セクション名文字列テーブル」だった場合, 控えておく]
 		if (analysis->header.shstrndx == i) {
@@ -50,7 +54,7 @@ bool	extract_sections(t_master* m, t_analysis* analysis, const void* section_hea
 	for (size_t i = 0; i < analysis->num_section; ++i) {
 		t_section_unit*	section = &analysis->sections[i];
 		if (analysis->found_section_name_str_table) {
-			section->name = analysis->sections[analysis->section_name_str_table_index].head + section->name_offset;
+			section->name = analysis->sections[analysis->section_name_str_table_index].head_addr + section->name_offset;
 		} else {
 			section->name = NULL;
 		}
@@ -59,7 +63,9 @@ bool	extract_sections(t_master* m, t_analysis* analysis, const void* section_hea
 	return true;
 }
 
-void extract_symbol_tables(t_analysis* analysis) {
+static void extract_symbol_tables(t_analysis* analysis) {
+	analysis->symbol_tables = malloc(sizeof(t_table_pair) * analysis->num_symbol_table);
+	YOYO_ASSERT(analysis->symbol_tables != NULL);
 	size_t	i_symbol_table = 0;
 	analysis->num_symbol = 0;
 	for (size_t i = 0; i < analysis->num_section; ++i) {
@@ -82,7 +88,12 @@ void extract_symbol_tables(t_analysis* analysis) {
 	}
 }
 
-void	extract_symbols(t_master* m, t_analysis* analysis) {
+static void	extract_symbols(t_master* m, t_analysis* analysis) {
+	YOYO_ASSERT(analysis->num_symbol > 0);
+	analysis->symbols = malloc(sizeof(t_symbol_unit) * analysis->num_symbol);
+	YOYO_ASSERT(analysis->symbols != NULL);
+	analysis->sorted_symbols = malloc(sizeof(t_symbol_unit *) * analysis->num_symbol);
+	YOYO_ASSERT(analysis->sorted_symbols != NULL);
 	analysis->num_symbol_effective = 0;
 	size_t i_symbol = 0;
 	for (size_t i_symbol_table = 0; i_symbol_table < analysis->num_symbol_table; ++i_symbol_table) {
@@ -108,14 +119,15 @@ void	extract_symbols(t_master* m, t_analysis* analysis) {
 					print_unrecoverable_generic_error_by_message(m, analysis->target.path, "SOMETHING WRONG");
 					break;
 			}
-			symbol_unit->offset = (size_t)(current_symbol - analysis->target.head);
+			symbol_unit->offset = (size_t)(current_symbol - analysis->target.head_addr);
 			symbol_unit->relevant_section = get_referencing_section(m, analysis, symbol_unit);
 
-			// シンボル名をセットする
+			// [シンボル名をセットする]
 			determine_symbol_name(m, analysis, node, symbol_unit);
 
-			// シンボルグリフを決定する
+			// [シンボルグリフを決定する]
 			determine_symbol_griff(m, analysis, symbol_unit);
+
 			current_symbol += symbol_table->entry_size;
 			analysis->num_symbol_effective += 1;
 		}
@@ -123,26 +135,24 @@ void	extract_symbols(t_master* m, t_analysis* analysis) {
 }
 
 // シンボル名による比較
-int		compare_by_name(const t_symbol_unit* a, const t_symbol_unit* b, bool rev) {
-	int rv = ft_strcmp(a->name, b->name);
-	return rev ? -rv : rv;
-}
-
-// シンボルのアドレス(value)による比較
-// (オフセットではないことに注意)
-int		compare_by_address(const t_symbol_unit* a, const t_symbol_unit* b, bool rev) {
-	int rv = a->address > b->address ? +1 : a->address < b->address ? -1 : 0;
+static int		compare_by_name(const t_symbol_unit* a, const t_symbol_unit* b, bool rev) {
+	int rv;
+	if (a->name == NULL || b->name == NULL) {
+		rv = (a->name == NULL ? 0 : 1) - (b->name == NULL ? 0 : 1);
+	} else {
+		rv = ft_strcmp(a->name, b->name);
+	}
 	return rev ? -rv : rv;
 }
 
 // シンボルのオフセットによる比較
 // (アドレスではないことに注意)
-int		compare_by_offset(const t_symbol_unit* a, const t_symbol_unit* b, bool rev) {
+static int		compare_by_offset(const t_symbol_unit* a, const t_symbol_unit* b, bool rev) {
 	int rv = a->offset > b->offset ? +1 : a->offset < b->offset ? -1 : 0;
 	return rev ? -rv : rv;
 }
 
-int		compare_complex(const t_symbol_unit* a, const t_symbol_unit* b, bool rev) {
+static int		compare_complex(const t_symbol_unit* a, const t_symbol_unit* b, bool rev) {
 	int rv = compare_by_name(a, b, rev);
 	if (rv == 0) {
 		rv = compare_by_offset(a, b, false); // TODO: 環境依存?
@@ -150,7 +160,7 @@ int		compare_complex(const t_symbol_unit* a, const t_symbol_unit* b, bool rev) {
 	return rv;
 }
 
-void	quicksort_symbols(
+static void	quicksort_symbols(
 	const t_master* m,
 	t_symbol_unit** list,
 	size_t n,
@@ -181,7 +191,7 @@ void	quicksort_symbols(
 	quicksort_symbols(m, list + i, n - i, compare);
 }
 
-void	sort_symbols(const t_master* m, t_analysis* analysis) {
+static void	sort_symbols(const t_master* m, t_analysis* analysis) {
 	for (size_t i = 0; i < analysis->num_symbol_effective; ++i) {
 		analysis->sorted_symbols[i] = &analysis->symbols[i];
 	}
@@ -190,7 +200,7 @@ void	sort_symbols(const t_master* m, t_analysis* analysis) {
 	}
 }
 
-void	destroy_analysis(const t_master* m, t_analysis* analysis) {
+static void	destroy_analysis(const t_master* m, t_analysis* analysis) {
 	free(analysis->sections);
 	free(analysis->symbol_tables);
 	free(analysis->symbols);
@@ -204,8 +214,12 @@ static bool	should_print_address(const t_symbol_unit* symbol) {
 
 static bool should_print_symbol(const t_symbol_unit* symbol) {
 	if (symbol->symbol_griff == SYMGRIFF_UNKNOWN) { return false; }
-	if (symbol->symbol_griff == 'U' && ft_strnlen(symbol->name, 1) == 0) { return false; }
-	if (symbol->name[0] == '$' && ft_strnlen(symbol->name, 3) == 2) { return false; }
+	// if (symbol->symbol_griff == 'U' && (symbol->name == NULL || ft_strnlen(symbol->name, 1) == 0)) { return false; }
+	if (symbol->symbol_griff == 'U' && symbol->bind == STB_LOCAL) { return false; }
+	if (symbol->name != NULL) {
+		if (symbol->symbol_griff == 'U' && ft_strnlen(symbol->name, 1) == 0) { return false; }
+		if (symbol->name[0] == '$' && ft_strnlen(symbol->name, 3) == 2) { return false; }
+	}
 	return true;
 }
 
@@ -222,7 +236,15 @@ static void print_symbol_address(const t_analysis* analysis, const t_symbol_unit
 	}
 }
 
-static void	print_symbols(const t_analysis* analysis) {
+static void	print_symbols(const t_master* m, const t_analysis* analysis) {
+	if (m->num_target > 1) {
+		yoyo_dprintf(STDOUT_FILENO, "\n");
+		yoyo_dprintf(STDOUT_FILENO, "%s:\n", analysis->target.path);
+	}
+	if (analysis->num_symbol_effective == 0) {
+		yoyo_dprintf(STDERR_FILENO, "%s: %s: %s\n", m->exec_name, analysis->target.path, "no symbols");
+		return;
+	}
 	for (size_t i = 0; i < analysis->num_symbol_effective; ++i) {
 		t_symbol_unit*	symbol = analysis->sorted_symbols[i];
 		if (!should_print_symbol(symbol)) {
@@ -243,7 +265,19 @@ static void	print_symbols(const t_analysis* analysis) {
 	}
 }
 
-static bool	analyze_mapped_region(t_master* m, t_analysis*	analysis) {
+// セクションヘッダーテーブルの終端がELFファイルの中に収まっているかどうか
+static bool	is_sht_within_mmapped_region(const t_object_header* header, const t_target_file* target) {
+	// オーバーフローチェック
+	if (header->shentsize == 0 || header->shnum > SIZE_MAX / header->shentsize) { return false; }
+	const size_t shsize = header->shnum * header->shentsize;
+	// shsize がELFサイズを超えていないかどうかチェック
+	if (shsize > target->size) { return false; }
+	// shoff + shsize がELFサイズを超えていないかどうかチェック
+	if (target->size - shsize < header->shoff) { return false; }
+	return true;
+}
+
+static bool	analyze(t_master* m, t_analysis* analysis) {
 	// この時点で, 対象ファイルは少なくとも 32ビットELFヘッダ以上のサイズを持っていることが確定している.
 	// [32/64ビットかどうかを判定し, 結果に応じてヘッダのマッピングを行う]
 	if (!analyze_header(m, analysis)) {
@@ -251,20 +285,13 @@ static bool	analyze_mapped_region(t_master* m, t_analysis*	analysis) {
 	}
 
 	// [セクションヘッダーテーブルを見る]
-	void* current_header = analysis->target.head + analysis->header.shoff;
-	const void* section_header_table = current_header;
-	size_t shsize = analysis->header.shnum * analysis->header.shentsize;
-	if (analysis->header.shoff + shsize > analysis->target.size) {
+	if (!is_sht_within_mmapped_region(&(analysis->header), &(analysis->target))) {
 		yoyo_dprintf(STDERR_FILENO, "%s: %s: %s\n", m->exec_name, analysis->target.path, "file format not recognized");
 		return false;
 	}
 
-	// [セクション配列を用意する]
-	analysis->num_section = analysis->header.shnum;
-	analysis->sections = malloc(sizeof(t_section_unit) * analysis->num_section);
-	YOYO_ASSERT(analysis->sections != NULL);
-	analysis->num_symbol_table = 0;
-	if (!extract_sections(m, analysis, section_header_table)) {
+	// [セクションを入れた配列を作る]
+	if (!extract_sections(m, analysis)) {
 		return false;
 	}
 
@@ -273,34 +300,18 @@ static bool	analyze_mapped_region(t_master* m, t_analysis*	analysis) {
 		yoyo_dprintf(STDERR_FILENO, "%s: %s: %s\n", m->exec_name, analysis->target.path, "no symbols");
 		return false;
 	}
-	analysis->symbol_tables = malloc(sizeof(t_table_pair) * analysis->num_symbol_table);
-	YOYO_ASSERT(analysis->symbol_tables != NULL);
-	
+
 	// [シンボルテーブルがあったら, 対応する文字列テーブルとペアにして配列に入れていく]
 	extract_symbol_tables(analysis);
 
 	// [シンボルを配列化する]
-	YOYO_ASSERT(analysis->num_symbol > 0);
-	analysis->symbols = malloc(sizeof(t_symbol_unit) * analysis->num_symbol);
-	YOYO_ASSERT(analysis->symbols != NULL);
-	analysis->sorted_symbols = malloc(sizeof(t_symbol_unit *) * analysis->num_symbol);
-	YOYO_ASSERT(analysis->sorted_symbols != NULL);
-
 	extract_symbols(m, analysis);
 
 	// [必要ならシンボルをソート]
 	sort_symbols(m, analysis);
 
 	// [表示]
-	if (m->num_target > 1) {
-		yoyo_dprintf(STDOUT_FILENO, "\n");
-		yoyo_dprintf(STDOUT_FILENO, "%s:\n", analysis->target.path);
-	}
-	if (analysis->num_symbol_effective > 0) {
-		print_symbols(analysis);
-	} else {
-		yoyo_dprintf(STDERR_FILENO, "%s: %s: %s\n", m->exec_name, analysis->target.path, "no symbols");
-	}
+	print_symbols(m, analysis);
 	return true;
 }
 
@@ -311,10 +322,12 @@ bool	analyze_file(t_master* m, const char* target_path) {
 
 	t_target_file*	target = &m->current_analysis.target;
 	// [ファイルの展開]
-	if (!mmap_target_file(m, target_path, target)) {
+	if (!deploy_analysis(m, target_path, target)) {
 		return false;
 	}
-	bool	result = analyze_mapped_region(m, analysis);
+	// [ファイルの解析]
+	bool	result = analyze(m, analysis);
+	// [後始末]
 	destroy_analysis(m, analysis);
 	return result;
 }

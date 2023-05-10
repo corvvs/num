@@ -19,7 +19,7 @@
 # include "libft.h"
 
 // file.c
-bool	mmap_target_file(const t_master* m, const char* path, t_target_file* target);
+bool	deploy_analysis(const t_master* m, const char* path, t_target_file* target);
 void	destroy_target_file(const t_master* m, const t_target_file* target);
 
 // nm.c

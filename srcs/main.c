@@ -71,6 +71,7 @@ int main(int argc, char** argv) {
 	}
 
 	int status = 0;
+	// [対象ファイルの解析]
 	for (master.i = 0; master.i < master.num_target; ++master.i) {
 		if (!analyze_file(&master, master.target_names[master.i])) {
 			status = (status + 1) % 256;

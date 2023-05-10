@@ -15,7 +15,11 @@ void	determine_symbol_name(
 		return;
 	} else {
 		const t_string_table_unit* string_table = &table_pair->string_table;
-		symbol->name = string_table->head + symbol->name_offset;
+		if (string_table->is_terminated) {
+			symbol->name = string_table->head_addr + symbol->name_offset;
+		} else {
+			symbol->name = NULL;
+		}
 	}
 }
 

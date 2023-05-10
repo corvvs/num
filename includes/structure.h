@@ -91,12 +91,12 @@ typedef struct s_section_unit {
 	uint64_t	type;        // タイプ
 	uint64_t	flags;       // フラグ
 	uint64_t	link;        // リンク先
-	void*		head;        // セクションのメモリマップアドレス
+	void*		head_addr;   // セクションのメモリマップアドレス
 	size_t		offset;      // セクションのファイルオフセット
 	size_t		entsize;     // エントリーサイズ
 	size_t		size;        // セクションのサイズ
 	uint64_t	info;
-
+	// [ELFの先頭アドレス] + offset = head_addr が成り立つ
 	t_section_category category;
 } t_section_unit;
 
@@ -123,11 +123,13 @@ typedef struct s_string_table_unit
 {
 	const t_section_unit*	section;
 	// 実際の文字列テーブルの先頭アドレス
-	void *head;
+	void*	head_addr;
 	// ELFファイル先頭からのオフセット
-	size_t offset;
+	size_t	offset;
 	// 文字列テーブル全体のサイズ
-	size_t total_size;
+	size_t	total_size;
+	// NUL-terminated かどうか
+	bool	is_terminated;
 } t_string_table_unit;
 
 // (32/64ビット共通)
@@ -158,7 +160,7 @@ typedef struct s_target_file
 {
 	const char *path;
 	// memmap された対象ファイルの先頭アドレス
-	void *head;
+	void *head_addr;
 	// 対象ファイルの真のサイズ
 	size_t size;
 } t_target_file;

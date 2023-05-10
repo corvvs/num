@@ -58,9 +58,7 @@ static t_target_category	get_elf_class(const t_elf_identify e_ident) {
 }
 
 // ELFヘッダのうち, e_ident[] の整合性をチェックする.
-static bool	check_elf_ident_consistency(const t_master* m, const t_analysis* analysis) {
-	(void)m;
-	const t_elf_identify	e_ident = (t_elf_identify)analysis->target.head;
+static bool	check_elf_ident_consistency(const t_elf_identify e_ident) {
 	if (!starts_with_elf(e_ident)) {
 		// NOT A ELF
 		return false;
@@ -77,26 +75,30 @@ static bool	check_elf_ident_consistency(const t_master* m, const t_analysis* ana
 }
 
 bool	analyze_header(const t_master* m, t_analysis* analysis) {
-	const t_target_file* target = &analysis->target;
-	if (!check_elf_ident_consistency(m, analysis)) {
+	const t_target_file*	target = &analysis->target;
+	const t_elf_identify	e_ident = (t_elf_identify)target->head_addr;
+	// [e_ident チェック]
+	if (!check_elf_ident_consistency(e_ident)) {
+		// ELFとして識別できない場合はこの時点でエラーとする
 		print_recoverable_file_error_by_message(m, target->path, "file format not recognized");
 		return false;
 	}
-	const t_elf_identify	e_ident = (t_elf_identify)analysis->target.head;
+	// [ELFのエンディアンを取得]
 	analysis->endian = get_elf_endian(e_ident);
 	if (analysis->endian == END_UNKNOWN) {
 		print_recoverable_file_error_by_message(m, target->path, "file format not recognized");
 		return false;
 	}
 	analysis->system_endian = m->system_endian;
+	// [ELFのクラスに応じてELFヘッダをマップする]
 	const t_target_category	category = get_elf_class(e_ident);
 	analysis->category = category;
 	switch (category) {
 		case TC_ELF32:
-			map_elf32_header(analysis, target->head, &analysis->header);
+			map_elf32_header(analysis, target->head_addr, &analysis->header);
 			break;
 		case TC_ELF64:
-			map_elf64_header(analysis, target->head, &analysis->header);
+			map_elf64_header(analysis, target->head_addr, &analysis->header);
 			break;
 		default:
 			print_recoverable_file_error_by_message(m, target->path, "file format not recognized");

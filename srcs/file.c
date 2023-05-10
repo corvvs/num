@@ -1,7 +1,7 @@
 #include "nm.h"
 
 // path にある対象ファイルをメモリ上に展開し, 情報を target にセットする.
-bool	mmap_target_file(const t_master* m, const char* path, t_target_file* target) {
+bool	deploy_analysis(const t_master* m, const char* path, t_target_file* target) {
 	int fd = open(path, O_RDONLY);
 	if (fd < 0) {
 		if (errno == ENOENT) {
@@ -56,13 +56,13 @@ bool	mmap_target_file(const t_master* m, const char* path, t_target_file* target
 	}
 
 	target->path = path;
-	target->head = mem;
+	target->head_addr = mem;
 	target->size = size;
 	return true;
 }
 
 void	destroy_target_file(const t_master* m, const t_target_file* target) {
-	if (munmap(target->head, target->size)) {
+	if (munmap(target->head_addr, target->size)) {
 		print_unrecoverable_generic_error_by_errno(m, target->path);
 	}
 }
