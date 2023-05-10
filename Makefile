@@ -9,8 +9,9 @@ FILES	:=	\
 			analysis_header.c\
 			section.c\
 			symbol.c\
-			print_utils.c\
 			basic_utils.c\
+			consistency_utils.c\
+			print_utils.c\
 			endian.c\
 			names.c\
 			printf.c\

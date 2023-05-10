@@ -52,6 +52,11 @@ void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_sym
 // basic_utils.c
 char*	yo_basename(const char* path);
 
+
+// consistency_utils.c
+bool	is_size_mem_aligned(size_t size_val);
+# define IS_SIZE_SATISFIED(size_val, type) ((size_val) >= sizeof(type))
+
 // print_utils.c
 void	print_recoverable_generic_error_by_errno(const t_master* m, const char* path);
 void	print_recoverable_generic_error_by_message(const t_master* m, const char* path, const char* message);
