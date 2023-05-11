@@ -58,6 +58,7 @@ bool	deploy_analysis(const t_master* m, const char* path, t_target_file* target)
 	target->path = path;
 	target->head_addr = mem;
 	target->size = size;
+	// DEBUGINFO("mmapped: [%p, %p), size: %zu", mem, mem + size, size);
 	return true;
 }
 

@@ -92,7 +92,7 @@ typedef struct s_section_unit {
 	uint64_t	flags;       // フラグ
 	uint64_t	link;        // リンク先
 	void*		head_addr;   // セクションのメモリマップアドレス
-	size_t		offset;      // セクションのファイルオフセット
+	size_t		sec_offset;      // セクションのファイルオフセット
 	size_t		entsize;     // エントリーサイズ
 	size_t		size;        // セクションのサイズ
 	uint64_t	info;
