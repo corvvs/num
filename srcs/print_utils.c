@@ -52,7 +52,7 @@ void	print_chars(int fd, char ch, uint64_t n) {
 void	debug_print_section(const t_section_unit* section) {
 	(void)section;
 	DEBUGINFO("sec: %zx -> %s(t:%llx)\t%s li:%llu\t%c%c%c%c%c%c%c%c%c%c%c%c%c%c %b\t%s",
-		section->offset,
+		section->sec_offset,
 		sectiontype_to_name(section->type), section->type,
 		section_category_to_name(section->category),
 		section->link,

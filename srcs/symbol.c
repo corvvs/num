@@ -1,7 +1,7 @@
 #include "nm.h"
 
 // シンボルの名前 name を決定する
-void	determine_symbol_name(
+bool	determine_symbol_name(
 	const t_master* m,
 	const t_analysis* analysis,
 	const t_table_pair* table_pair,
@@ -19,11 +19,17 @@ void	determine_symbol_name(
 	} else {
 		const t_string_table_unit* string_table = &table_pair->string_table;
 		if (string_table->is_terminated) {
+			// DEBUGOUT("symbol->name_offset: %zu, string_table->total_size: %zu", symbol->name_offset, string_table->total_size);
+			if (symbol->name_offset > string_table->total_size) {
+				symbol->name = NULL;
+				return false;
+			}
 			symbol->name = string_table->head_addr + symbol->name_offset;
 		} else {
 			symbol->name = NULL;
 		}
 	}
+	return true;
 }
 
 static t_visibility	infer_symbol_visibility(const t_symbol_unit* symbol) {
@@ -42,7 +48,7 @@ static t_visibility	infer_symbol_visibility(const t_symbol_unit* symbol) {
 		default:
 			break;
 	}
-	const bool maybe_global = symbol->name[0] != '_';
+	const bool maybe_global = symbol->name != NULL && symbol->name[0] != '_';
 	return maybe_global ? V_GLOBAL : V_LOCAL;
 }
 

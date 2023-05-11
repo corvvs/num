@@ -12,6 +12,53 @@ static uint64_t	number_width(uint64_t i, uint32_t base) {
 	return n;
 }
 
+// check [in_from, in_from + in_size) is within [ex_from, ex_from + ex_size)
+static bool is_region_within_another(
+	const void* in_from,
+	size_t in_size,
+	const void* ex_from,
+	size_t ex_size
+) {
+	if (in_from < ex_from) {
+		return false;
+	}
+	if (ex_size < in_size) {
+		return false;
+	}
+	if ((size_t)(in_from - ex_from) > (ex_size - in_size)) {
+		return false;
+	}
+	return true;
+}
+
+static bool	is_sec_within_mmapped_region(const t_analysis* analysis, const t_section_unit* section) {
+	// DEBUGOUT("ELF: [%p, %p)", analysis->target.head_addr, analysis->target.head_addr + analysis->target.size);
+	// DEBUGOUT("sec: [%p, %p)", section->head_addr, section->head_addr + section->size);
+	return is_region_within_another(section->head_addr, section->size, analysis->target.head_addr, analysis->target.size);
+}
+
+// アドレス from, ELFファイルの中に収まっているかどうか
+static bool	is_mem_within_mmapped_region(
+	size_t elf_size,
+	size_t offset,
+	size_t size
+) {
+	// DEBUGOUT("elf_size: %zu, offset: %zu, size: %zu", elf_size, offset, size);
+	// サイズ がELFサイズを超えていないかどうかチェック
+	if (size > elf_size) { return false; }
+	// オフセット + サイズ がELFサイズを超えていないかどうかチェック
+	if (elf_size - size < offset) { return false; }
+	return true;
+}
+
+// セクションヘッダーテーブルの終端がELFファイルの中に収まっているかどうか
+static bool	is_sht_within_mmapped_region(const t_object_header* header, const t_target_file* target) {
+	// オーバーフローチェック
+	if (header->shentsize == 0 || header->shnum > SIZE_MAX / header->shentsize) { return false; }
+	const size_t shsize = header->shnum * header->shentsize;
+	return is_mem_within_mmapped_region(target->size, header->shoff, shsize);
+}
+
 static bool	extract_sections(t_master* m, t_analysis* analysis) {
 	analysis->num_section = analysis->header.shnum;
 	analysis->sections = malloc(sizeof(t_section_unit) * analysis->num_section);
@@ -34,7 +81,12 @@ static bool	extract_sections(t_master* m, t_analysis* analysis) {
 				print_unrecoverable_generic_error_by_message(m, analysis->target.path, "SOMETHING WRONG");
 				return false;
 		}
-		section->head_addr = analysis->target.head_addr + section->offset;
+		section->head_addr = analysis->target.head_addr + section->sec_offset;
+		// [セクションのオーバーフローチェック]
+		if (!is_sec_within_mmapped_region(analysis, section)) {
+			print_recoverable_file_error_by_message(m, analysis->target.path, "file format not recognized");
+			return false;
+		}
 
 		// [セクションが「セクション名文字列テーブル」だった場合, 控えておく]
 		if (analysis->header.shstrndx == i) {
@@ -65,6 +117,10 @@ static bool	extract_sections(t_master* m, t_analysis* analysis) {
 	for (size_t i = 0; i < analysis->num_section; ++i) {
 		t_section_unit*	section = &analysis->sections[i];
 		if (analysis->found_section_name_str_table) {
+			// DEBUGOUT("section->name_offset: %zu, sec_strtab->total_size: %zu", section->name_offset, sec_strtab->total_size);
+			if (section->name_offset > sec_strtab->total_size) {
+				return false;
+			}
 			section->name = sec_strtab->head_addr + section->name_offset;
 		} else {
 			section->name = NULL;
@@ -72,29 +128,6 @@ static bool	extract_sections(t_master* m, t_analysis* analysis) {
 		determine_section_category(m, analysis, section);
 	}
 	return true;
-}
-
-// アドレス from, ELFファイルの中に収まっているかどうか
-static bool	is_mem_within_mmapped_region(
-	size_t elf_size,
-	size_t offset,
-	size_t size
-) {
-	// DEBUGOUT("elf_size: %zu, offset: %zu, size: %zu", elf_size, offset, size);
-	// サイズ がELFサイズを超えていないかどうかチェック
-	if (size > elf_size) { return false; }
-	// オフセット + サイズ がELFサイズを超えていないかどうかチェック
-	if (elf_size - size < offset) { return false; }
-	return true;
-}
-
-
-// セクションヘッダーテーブルの終端がELFファイルの中に収まっているかどうか
-static bool	is_sht_within_mmapped_region(const t_object_header* header, const t_target_file* target) {
-	// オーバーフローチェック
-	if (header->shentsize == 0 || header->shnum > SIZE_MAX / header->shentsize) { return false; }
-	const size_t shsize = header->shnum * header->shentsize;
-	return is_mem_within_mmapped_region(target->size, header->shoff, shsize);
 }
 
 static bool extract_symbol_tables(t_analysis* analysis) {
@@ -166,7 +199,10 @@ static bool	extract_symbols(t_master* m, t_analysis* analysis) {
 			symbol_unit->relevant_section = get_referencing_section(m, analysis, symbol_unit);
 
 			// [シンボル名をセットする]
-			determine_symbol_name(m, analysis, node, symbol_unit);
+			if (!determine_symbol_name(m, analysis, node, symbol_unit)) {
+				yoyo_dprintf(STDERR_FILENO, "%s: %s: %s\n", m->exec_name, analysis->target.path, "file format not recognized");
+				return false;
+			}
 
 			// [シンボルグリフを決定する]
 			determine_symbol_griff(m, analysis, symbol_unit);

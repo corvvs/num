@@ -34,7 +34,7 @@ void	map_elf64_section_header(const t_analysis* analysis, const t_elf_64_section
 	original->type        = SWAP_NEEDED(analysis, defined->sh_type);
 	original->flags       = SWAP_NEEDED(analysis, defined->sh_flags);
 	original->link        = SWAP_NEEDED(analysis, defined->sh_link);
-	original->offset      = SWAP_NEEDED(analysis, defined->sh_offset);
+	original->sec_offset  = SWAP_NEEDED(analysis, defined->sh_offset);
 	original->entsize     = SWAP_NEEDED(analysis, defined->sh_entsize);
 	original->size        = SWAP_NEEDED(analysis, defined->sh_size);
 	original->info        = SWAP_NEEDED(analysis, defined->sh_info);
@@ -47,7 +47,7 @@ void	map_elf32_section_header(const t_analysis* analysis, const t_elf_32_section
 	original->type        = SWAP_NEEDED(analysis, defined->sh_type);
 	original->flags       = SWAP_NEEDED(analysis, defined->sh_flags);
 	original->link        = SWAP_NEEDED(analysis, defined->sh_link);
-	original->offset      = SWAP_NEEDED(analysis, defined->sh_offset);
+	original->sec_offset  = SWAP_NEEDED(analysis, defined->sh_offset);
 	original->entsize     = SWAP_NEEDED(analysis, defined->sh_entsize);
 	original->size        = SWAP_NEEDED(analysis, defined->sh_size);
 	original->info        = SWAP_NEEDED(analysis, defined->sh_info);
@@ -94,6 +94,7 @@ void	map_elf64_symbol(const t_analysis* analysis, const t_elf_64_symbol* defined
 	original->is_debug = false;
 	original->is_global = false;
 	original->is_undefined = false;
+	// DEBUGINFO("defined: %p, original->name_offset: %zu", defined, original->name_offset);
 }
 
 // ELF32シンボル構造体をシンボル構造体にマップする
@@ -124,7 +125,7 @@ void	map_section_to_symbol_table(const t_section_unit* section, t_symbol_table_u
 
 	table->section = section;
 	table->head_addr = section->head_addr;
-	table->offset = section->offset;
+	table->offset = section->sec_offset;
 	table->entry_size = section->entsize;
 	table->total_size = section->size;
 	if (table->entry_size > 0) {
@@ -142,7 +143,7 @@ void	map_section_to_string_table(const t_section_unit* section, t_string_table_u
 
 	table->section = section;
 	table->head_addr = section->head_addr;
-	table->offset = section->offset;
+	table->offset = section->sec_offset;
 	table->total_size = section->size;
 	// 文字列テーブルがNUL-terminatedかどうかチェック
 	if (table->total_size > 0) {
