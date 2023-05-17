@@ -118,7 +118,7 @@ static bool	extract_sections(t_master* m, t_analysis* analysis) {
 		section->head_addr = analysis->target.head_addr + section->sec_offset;
 		// [セクションのオーバーフローチェック]
 		if (!is_sec_within_mmapped_region(analysis, section)) {
-			print_recoverable_file_error_by_message(m, analysis->target.path, "file format not recognized6");
+			print_recoverable_file_error_by_message(m, analysis->target.path, "file format not recognized");
 			return false;
 		}
 
@@ -127,7 +127,7 @@ static bool	extract_sections(t_master* m, t_analysis* analysis) {
 			analysis->section_name_str_table_index = i;
 			map_section_to_string_table(section, &analysis->section_name_str_table);
 			if (!analysis->section_name_str_table.is_terminated) {
-				print_recoverable_file_error_by_message(m, analysis->target.path, "file format not recognized7");
+				print_recoverable_file_error_by_message(m, analysis->target.path, "file format not recognized");
 				return false;
 			}
 			analysis->found_section_name_str_table = true;
@@ -148,7 +148,7 @@ static bool	extract_sections(t_master* m, t_analysis* analysis) {
 
 	// どの2つのセクションもオーバーラップしないことをチェックする
 	if (!is_no_section_overlapping(analysis)) {
-		print_recoverable_file_error_by_message(m, analysis->target.path, "file format not recognized8");
+		print_recoverable_file_error_by_message(m, analysis->target.path, "file format not recognized");
 		return false;
 	}
 
@@ -404,7 +404,7 @@ static bool	analyze_elf(t_master* m, t_analysis* analysis) {
 
 	// [セクションヘッダーテーブルを見る]
 	if (!is_sht_within_mmapped_region(&(analysis->header), &(analysis->target))) {
-		yoyo_dprintf(STDERR_FILENO, "%s: %s: %s\n", m->exec_name, analysis->target.path, "file format not recognized9");
+		yoyo_dprintf(STDERR_FILENO, "%s: %s: %s\n", m->exec_name, analysis->target.path, "file format not recognized");
 		return false;
 	}
 
@@ -427,7 +427,7 @@ static bool	analyze_elf(t_master* m, t_analysis* analysis) {
 
 	// [シンボルを配列化する]
 	if (!extract_symbols(m, analysis)) {
-		yoyo_dprintf(STDERR_FILENO, "%s: %s: %s\n", m->exec_name, analysis->target.path, "file format not recognizedA");
+		yoyo_dprintf(STDERR_FILENO, "%s: %s: %s\n", m->exec_name, analysis->target.path, "file format not recognized");
 		return false;
 	}
 
