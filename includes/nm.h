@@ -11,6 +11,7 @@
 # include <string.h>
 # include <errno.h>
 # include <stdbool.h>
+# include <sys/time.h>
 # include <elf.h>
 
 # include "common.h"
@@ -39,8 +40,8 @@ const t_section_unit*	get_referencing_section(const t_master* m, const t_analysi
 // analysis.c
 bool	analyze_file(t_master* m, const char* target_path);
 
-// analysis_header.c
-bool	analyze_header(const t_master* m, t_analysis* analysis);
+// detect_header.c
+bool	detect_header(const t_master* m, t_analysis* analysis);
 
 // section.c
 void	determine_section_category(const t_master* m, const t_analysis* analysis, t_section_unit* section);
@@ -51,6 +52,7 @@ void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_sym
 
 // basic_utils.c
 char*	yo_basename(const char* path);
+bool	yo_str_equal(const char* s1, const char* s2);
 
 
 // consistency_utils.c
@@ -87,12 +89,21 @@ void	yoyo_assert(const char* strexp, bool exp, const char* file, unsigned int li
 # define YOYO_ASSERT(exp) yoyo_assert(#exp, exp, __FILE__, __LINE__, __func__)
 
 // endian.c
-uint16_t swap_2byte(uint16_t value);
-uint32_t swap_4byte(uint32_t value);
-uint64_t swap_8byte(uint64_t value);
+uint16_t	swap_2byte(uint16_t value);
+uint32_t	swap_4byte(uint32_t value);
+uint64_t	swap_8byte(uint64_t value);
+
+// fuzzing.c
+uint8_t		fuzz_1byte(uint8_t value);
+uint16_t	fuzz_2byte(uint16_t value);
+uint32_t	fuzz_4byte(uint32_t value);
+uint64_t	fuzz_8byte(uint64_t value);
 
 # define SWAP_BYTE(value) (sizeof(value) < 2 ? (value) : sizeof(value) < 4 ? swap_2byte(value) : sizeof(value) < 8 ? swap_4byte(value) : swap_8byte(value))
 # define SWAP_NEEDED(analysis, value) (analysis->system_endian == analysis->endian ? (value) : SWAP_BYTE(value))
+# define FUZZ_BYTE(value) (sizeof(value) < 2 ? fuzz_1byte(value) : sizeof(value) < 4 ? fuzz_2byte(value) : sizeof(value) < 8 ? fuzz_4byte(value) : fuzz_8byte(value))
+// # define FUZZ_NEEDED(analysis, value) SWAP_NEEDED(analysis, value)
+# define FUZZ_NEEDED(analysis, value) (FUZZ_BYTE(SWAP_NEEDED(analysis, value)))
 
 #endif
 

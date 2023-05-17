@@ -4,7 +4,7 @@
 
 static t_section_category	determine_generic_section_category(const t_section_unit* section) {
 	// prefixed by ".debug"
-	if (ft_strncmp(section->name, ".debug", 6) == 0) {
+	if (section->name != NULL && ft_strncmp(section->name, ".debug", 6) == 0) {
 		return SC_DEBUG;
 	}
 	// プログラムデータ（コードやデータなど）を格納するセクション
@@ -13,7 +13,7 @@ static t_section_category	determine_generic_section_category(const t_section_uni
 		return SC_TEXT;
 	}
 	if (FLAG_ALL(section->flags, SHF_WRITE | SHF_ALLOC)) {
-		if (ft_strcmp(section->name, ".got") == 0) {
+		if (yo_str_equal(section->name, ".got")) {
 			// フラグがSHF_WRITE | SHF_ALLOC, かつ名前が .got → GOTセクション
 			return SC_GOT;
 		}
@@ -61,7 +61,7 @@ void	determine_section_category(const t_master* m, const t_analysis* analysis, t
 		case SHT_REL:
 		case SHT_RELA:
 		case SHT_PROGBITS: {
-			if (section->type == SHT_PROGBITS && ft_strcmp(section->name, ".note.GNU-stack") == 0) {
+			if (section->type == SHT_PROGBITS && yo_str_equal(section->name, ".note.GNU-stack")) {
 				section->category = SC_MERGEABLE_CHARACTER;
 				return;
 			}
@@ -83,7 +83,7 @@ void	determine_section_category(const t_master* m, const t_analysis* analysis, t
 		default: {
 			if (SHT_LOPROC <= section->type && section->type <= SHT_HIPROC) {
 				// プロセッサ固有のセクション
-				if (ft_strcmp(section->name, ".ARM.attributes") == 0) {
+				if (yo_str_equal(section->name, ".ARM.attributes")) {
 					section->category = SC_MERGEABLE_CHARACTER; // ほんまかー
 					return;
 				}

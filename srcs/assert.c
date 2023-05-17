@@ -12,6 +12,6 @@ void	yoyo_assert(const char* strexp, bool exp, const char* file, unsigned int li
 void	yoyo_assert(const char* strexp, bool exp, const char* file, unsigned int line, const char* func) {
 	if (exp) { return; }
 	yoyo_dprintf(STDERR_FILENO, "%sassertion failed: `%s' at %s:%u %s%s\n", BG_RED, strexp, file, line, func, TX_RST);
-	exit(1);
+	exit(100);
 }
 #endif

@@ -45,18 +45,58 @@ static bool	is_mem_within_mmapped_region(
 ) {
 	// DEBUGOUT("elf_size: %zu, offset: %zu, size: %zu", elf_size, offset, size);
 	// サイズ がELFサイズを超えていないかどうかチェック
-	if (size > elf_size) { return false; }
+	if (size > elf_size) {
+		return false;
+	}
 	// オフセット + サイズ がELFサイズを超えていないかどうかチェック
-	if (elf_size - size < offset) { return false; }
+	if (elf_size - size < offset) {
+		return false;
+	}
 	return true;
 }
 
 // セクションヘッダーテーブルの終端がELFファイルの中に収まっているかどうか
 static bool	is_sht_within_mmapped_region(const t_object_header* header, const t_target_file* target) {
 	// オーバーフローチェック
-	if (header->shentsize == 0 || header->shnum > SIZE_MAX / header->shentsize) { return false; }
+	if (header->shentsize == 0 || header->shnum > SIZE_MAX / header->shentsize) {
+		return false;
+	}
 	const size_t shsize = header->shnum * header->shentsize;
 	return is_mem_within_mmapped_region(target->size, header->shoff, shsize);
+}
+
+// 各セクションが互いに重なっていないかどうか
+static bool is_no_section_overlapping(const t_analysis* analysis) {
+	for (size_t i = 0; i < analysis->num_section; ++i) {
+		const t_section_unit*	section_a = &analysis->sections[i];
+		if (section_a->type == SHT_NOBITS) {
+			// セクション種別 SHT_NOBITS はセクションの実体が存在しないのでチェック対象外
+			continue;
+		}
+		for (size_t j = i + 1; j < analysis->num_section; ++j) {
+			const t_section_unit*	section_b = &analysis->sections[j];
+			if (section_a->head_addr < section_b->head_addr) {
+				// 0 < section_b->head_addr - section_a->head_addr
+				// check: a_end <= b_start 
+				// a_end = a_start + a_size
+				// -> a_start + a_size <= b_start
+				// -> a_size <= b_start - a_start
+				if (section_a->size > (size_t)(section_b->head_addr - section_a->head_addr)) {
+					return false;
+				}
+			} else {
+				// 0 < section_a->head_addr - section_b->head_addr
+				// check: b_end <= a_start 
+				// b_end = b_start + b_size
+				// -> b_start + b_size <= a_start
+				// -> b_size <= a_start - b_start
+				if (section_b->size > (size_t)(section_a->head_addr - section_b->head_addr)) {
+					return false;
+				}
+			}
+		}
+	}
+	return true;
 }
 
 static bool	extract_sections(t_master* m, t_analysis* analysis) {
@@ -112,16 +152,23 @@ static bool	extract_sections(t_master* m, t_analysis* analysis) {
 		return false;
 	}
 
+	// どの2つのセクションもオーバーラップしないことをチェックする
+	if (!is_no_section_overlapping(analysis)) {
+		print_recoverable_file_error_by_message(m, analysis->target.path, "file format not recognized");
+		return false;
+	}
+
 	// セクション名文字列テーブルを使ってセクション名をセットする
 	const t_string_table_unit* sec_strtab = &analysis->section_name_str_table;
 	for (size_t i = 0; i < analysis->num_section; ++i) {
 		t_section_unit*	section = &analysis->sections[i];
 		if (analysis->found_section_name_str_table) {
-			// DEBUGOUT("section->name_offset: %zu, sec_strtab->total_size: %zu", section->name_offset, sec_strtab->total_size);
 			if (section->name_offset > sec_strtab->total_size) {
-				return false;
+				// DEBUGOUT("section->name_offset: %zu, sec_strtab->total_size: %zu", section->name_offset, sec_strtab->total_size);
+				section->name = NULL;
+			} else {
+				section->name = sec_strtab->head_addr + section->name_offset;
 			}
-			section->name = sec_strtab->head_addr + section->name_offset;
 		} else {
 			section->name = NULL;
 		}
@@ -141,9 +188,16 @@ static bool extract_symbol_tables(t_analysis* analysis) {
 			case SHT_SYMTAB:
 			case SHT_DYNSYM: {
 				size_t	string_table_index = section->link;
-				YOYO_ASSERT(string_table_index < analysis->num_section);
-				t_section_unit*	strtab_section = &analysis->sections[string_table_index];
-				t_table_pair* symbol_pair = &analysis->symbol_tables[i_symbol_table];
+				if (string_table_index >= analysis->num_section) {
+					return false;
+				}
+				const t_section_unit*	strtab_section = &analysis->sections[string_table_index];
+				// DEBUGOUT("[STRTAB?] idx: %zu %p", string_table_index, strtab_section);
+				debug_print_section(strtab_section);
+				if (strtab_section->type != SHT_STRTAB) {
+					return false;
+				}
+				t_table_pair*			symbol_pair = &analysis->symbol_tables[i_symbol_table];
 				t_symbol_table_unit*	symtab = &symbol_pair->symbol_table;
 				t_string_table_unit*	strtab = &symbol_pair->string_table;
 
@@ -165,7 +219,9 @@ static bool extract_symbol_tables(t_analysis* analysis) {
 }
 
 static bool	extract_symbols(t_master* m, t_analysis* analysis) {
-	YOYO_ASSERT(analysis->num_symbol > 0);
+	if (analysis->num_symbol == 0) {
+		return false;
+	}
 	analysis->symbols = malloc(sizeof(t_symbol_unit) * analysis->num_symbol);
 	YOYO_ASSERT(analysis->symbols != NULL);
 	analysis->sorted_symbols = malloc(sizeof(t_symbol_unit *) * analysis->num_symbol);
@@ -200,7 +256,6 @@ static bool	extract_symbols(t_master* m, t_analysis* analysis) {
 
 			// [シンボル名をセットする]
 			if (!determine_symbol_name(m, analysis, node, symbol_unit)) {
-				yoyo_dprintf(STDERR_FILENO, "%s: %s: %s\n", m->exec_name, analysis->target.path, "file format not recognized");
 				return false;
 			}
 
@@ -342,13 +397,14 @@ static void	print_symbols(const t_master* m, const t_analysis* analysis) {
 		// [名前の表示]
 		yoyo_dprintf(STDOUT_FILENO, "%s", symbol->name);
 		yoyo_dprintf(STDOUT_FILENO, "\n", symbol->name);
+		debug_print_symbol(symbol);
 	}
 }
 
-static bool	analyze(t_master* m, t_analysis* analysis) {
+static bool	analyze_elf(t_master* m, t_analysis* analysis) {
 	// この時点で, 対象ファイルは少なくとも 32ビットELFヘッダ以上のサイズを持っていることが確定している.
 	// [32/64ビットかどうかを判定し, 結果に応じてヘッダのマッピングを行う]
-	if (!analyze_header(m, analysis)) {
+	if (!detect_header(m, analysis)) {
 		return false;
 	}
 
@@ -376,7 +432,10 @@ static bool	analyze(t_master* m, t_analysis* analysis) {
 	}
 
 	// [シンボルを配列化する]
-	extract_symbols(m, analysis);
+	if (!extract_symbols(m, analysis)) {
+		yoyo_dprintf(STDERR_FILENO, "%s: %s: %s\n", m->exec_name, analysis->target.path, "file format not recognized");
+		return false;
+	}
 
 	// [必要ならシンボルをソート]
 	sort_symbols(m, analysis);
@@ -397,7 +456,7 @@ bool	analyze_file(t_master* m, const char* target_path) {
 		return false;
 	}
 	// [ファイルの解析]
-	bool	result = analyze(m, analysis);
+	bool	result = analyze_elf(m, analysis);
 	// [後始末]
 	destroy_analysis(m, analysis);
 	return result;

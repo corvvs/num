@@ -14,20 +14,24 @@ bool	determine_symbol_name(
 			const t_section_unit* section = &analysis->sections[symbol->shndx];
 			symbol->name = section->name;
 		} else {
-			symbol->name = NULL;
+			symbol->name = "(null)";
 		}
 	} else {
 		const t_string_table_unit* string_table = &table_pair->string_table;
 		if (string_table->is_terminated) {
-			// DEBUGOUT("symbol->name_offset: %zu, string_table->total_size: %zu", symbol->name_offset, string_table->total_size);
 			if (symbol->name_offset > string_table->total_size) {
-				symbol->name = NULL;
-				return false;
+				symbol->name = "(null)";
+				// return false;
+			} else {
+				symbol->name = string_table->head_addr + symbol->name_offset;
+				DEBUGOUT("symbol->name_offset: %zu, string_table->head_addr: %p, string_table->total_size: %zu, n: %d", symbol->name_offset, string_table->head_addr, string_table->total_size, *symbol->name);
 			}
-			symbol->name = string_table->head_addr + symbol->name_offset;
 		} else {
-			symbol->name = NULL;
+			symbol->name = "(null)";
 		}
+	}
+	if (symbol->name != NULL && *symbol->name >= 128) {
+		return false;
 	}
 	return true;
 }

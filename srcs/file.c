@@ -37,7 +37,6 @@ bool	deploy_analysis(const t_master* m, const char* path, t_target_file* target)
 	}
 	if (size < sizeof(Elf32_Ehdr)) {
 		// サイズ小さすぎ
-		// TODO: なんか出す
 		print_recoverable_file_error_by_message(m, path, "file format not recognized");
 		close(fd);
 		return false;

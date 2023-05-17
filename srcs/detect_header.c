@@ -93,7 +93,7 @@ static bool	check_elf_header_consistency(const t_analysis* analysis) {
 	return true;
 }
 
-bool	analyze_header(const t_master* m, t_analysis* analysis) {
+bool	detect_header(const t_master* m, t_analysis* analysis) {
 	const t_target_file*	target = &analysis->target;
 	const t_elf_identify	e_ident = (t_elf_identify)target->head_addr;
 	// [e_ident チェック]
