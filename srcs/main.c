@@ -25,8 +25,9 @@ void	parse_option(t_master* m, int argc, char **argv) {
 			} else if (arg[j] == 'p') {
 				m->option.without_sorting = true;
 			} else {
-				// TODO: invalid option
-				break;
+				yoyo_dprintf(STDERR_FILENO, "%s: invalid option -- '%c'\n", m->exec_name, arg[j]);
+				yoyo_dprintf(STDERR_FILENO, "Usage: %s [option(s)] [file(s)]\n", m->exec_name);
+				exit(1);
 			}
 		}
 	}
