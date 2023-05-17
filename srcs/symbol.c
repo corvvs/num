@@ -24,7 +24,7 @@ bool	determine_symbol_name(
 				// return false;
 			} else {
 				symbol->name = string_table->head_addr + symbol->name_offset;
-				DEBUGOUT("symbol->name_offset: %zu, string_table->head_addr: %p, string_table->total_size: %zu, n: %d", symbol->name_offset, string_table->head_addr, string_table->total_size, *symbol->name);
+				// DEBUGOUT("symbol->name_offset: %zu, string_table->head_addr: %p, string_table->total_size: %zu, n: %d", symbol->name_offset, string_table->head_addr, string_table->total_size, *symbol->name);
 			}
 		} else {
 			symbol->name = "(null)";

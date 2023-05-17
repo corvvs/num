@@ -102,8 +102,12 @@ uint64_t	fuzz_8byte(uint64_t value);
 # define SWAP_BYTE(value) (sizeof(value) < 2 ? (value) : sizeof(value) < 4 ? swap_2byte(value) : sizeof(value) < 8 ? swap_4byte(value) : swap_8byte(value))
 # define SWAP_NEEDED(analysis, value) (analysis->system_endian == analysis->endian ? (value) : SWAP_BYTE(value))
 # define FUZZ_BYTE(value) (sizeof(value) < 2 ? fuzz_1byte(value) : sizeof(value) < 4 ? fuzz_2byte(value) : sizeof(value) < 8 ? fuzz_4byte(value) : fuzz_8byte(value))
-// # define FUZZ_NEEDED(analysis, value) SWAP_NEEDED(analysis, value)
-# define FUZZ_NEEDED(analysis, value) (FUZZ_BYTE(SWAP_NEEDED(analysis, value)))
+# ifdef DO_FUZZING
+#  define FUZZ_NEEDED(analysis, value) (FUZZ_BYTE(SWAP_NEEDED(analysis, value)))
+# else
+#  define FUZZ_NEEDED(analysis, value) SWAP_NEEDED(analysis, value)
+# endif
+
 
 #endif
 

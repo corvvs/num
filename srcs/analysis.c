@@ -73,27 +73,21 @@ static bool is_no_section_overlapping(const t_analysis* analysis) {
 			// セクション種別 SHT_NOBITS はセクションの実体が存在しないのでチェック対象外
 			continue;
 		}
+		const void*	a_end = section_a->head_addr + section_a->size;
 		for (size_t j = i + 1; j < analysis->num_section; ++j) {
 			const t_section_unit*	section_b = &analysis->sections[j];
-			if (section_a->head_addr < section_b->head_addr) {
-				// 0 < section_b->head_addr - section_a->head_addr
-				// check: a_end <= b_start 
-				// a_end = a_start + a_size
-				// -> a_start + a_size <= b_start
-				// -> a_size <= b_start - a_start
-				if (section_a->size > (size_t)(section_b->head_addr - section_a->head_addr)) {
-					return false;
-				}
-			} else {
-				// 0 < section_a->head_addr - section_b->head_addr
-				// check: b_end <= a_start 
-				// b_end = b_start + b_size
-				// -> b_start + b_size <= a_start
-				// -> b_size <= a_start - b_start
-				if (section_b->size > (size_t)(section_a->head_addr - section_b->head_addr)) {
-					return false;
-				}
+			// check: a_end <= b_start or b_end <= a_start
+			// a_end = a_start + a_size
+			// b_end = b_start + b_size
+			// ->
+			// a_start + a_size <= b_start or b_start + b_size <= a_start
+			const void*	b_end = section_b->head_addr + section_b->size;
+			if (a_end <= section_b->head_addr || b_end <= section_a->head_addr) {
+				continue;
 			}
+			// debug_print_section(section_a);
+			// debug_print_section(section_b);
+			return false;
 		}
 	}
 	return true;
@@ -124,7 +118,7 @@ static bool	extract_sections(t_master* m, t_analysis* analysis) {
 		section->head_addr = analysis->target.head_addr + section->sec_offset;
 		// [セクションのオーバーフローチェック]
 		if (!is_sec_within_mmapped_region(analysis, section)) {
-			print_recoverable_file_error_by_message(m, analysis->target.path, "file format not recognized");
+			print_recoverable_file_error_by_message(m, analysis->target.path, "file format not recognized6");
 			return false;
 		}
 
@@ -133,7 +127,7 @@ static bool	extract_sections(t_master* m, t_analysis* analysis) {
 			analysis->section_name_str_table_index = i;
 			map_section_to_string_table(section, &analysis->section_name_str_table);
 			if (!analysis->section_name_str_table.is_terminated) {
-				print_recoverable_file_error_by_message(m, analysis->target.path, "file format not recognized");
+				print_recoverable_file_error_by_message(m, analysis->target.path, "file format not recognized7");
 				return false;
 			}
 			analysis->found_section_name_str_table = true;
@@ -154,7 +148,7 @@ static bool	extract_sections(t_master* m, t_analysis* analysis) {
 
 	// どの2つのセクションもオーバーラップしないことをチェックする
 	if (!is_no_section_overlapping(analysis)) {
-		print_recoverable_file_error_by_message(m, analysis->target.path, "file format not recognized");
+		print_recoverable_file_error_by_message(m, analysis->target.path, "file format not recognized8");
 		return false;
 	}
 
@@ -193,7 +187,7 @@ static bool extract_symbol_tables(t_analysis* analysis) {
 				}
 				const t_section_unit*	strtab_section = &analysis->sections[string_table_index];
 				// DEBUGOUT("[STRTAB?] idx: %zu %p", string_table_index, strtab_section);
-				debug_print_section(strtab_section);
+				// debug_print_section(strtab_section);
 				if (strtab_section->type != SHT_STRTAB) {
 					return false;
 				}
@@ -397,7 +391,7 @@ static void	print_symbols(const t_master* m, const t_analysis* analysis) {
 		// [名前の表示]
 		yoyo_dprintf(STDOUT_FILENO, "%s", symbol->name);
 		yoyo_dprintf(STDOUT_FILENO, "\n", symbol->name);
-		debug_print_symbol(symbol);
+		// debug_print_symbol(symbol);
 	}
 }
 
@@ -410,7 +404,7 @@ static bool	analyze_elf(t_master* m, t_analysis* analysis) {
 
 	// [セクションヘッダーテーブルを見る]
 	if (!is_sht_within_mmapped_region(&(analysis->header), &(analysis->target))) {
-		yoyo_dprintf(STDERR_FILENO, "%s: %s: %s\n", m->exec_name, analysis->target.path, "file format not recognized");
+		yoyo_dprintf(STDERR_FILENO, "%s: %s: %s\n", m->exec_name, analysis->target.path, "file format not recognized9");
 		return false;
 	}
 
@@ -433,7 +427,7 @@ static bool	analyze_elf(t_master* m, t_analysis* analysis) {
 
 	// [シンボルを配列化する]
 	if (!extract_symbols(m, analysis)) {
-		yoyo_dprintf(STDERR_FILENO, "%s: %s: %s\n", m->exec_name, analysis->target.path, "file format not recognized");
+		yoyo_dprintf(STDERR_FILENO, "%s: %s: %s\n", m->exec_name, analysis->target.path, "file format not recognizedA");
 		return false;
 	}
 

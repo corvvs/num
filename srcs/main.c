@@ -49,12 +49,14 @@ static t_endian	get_system_endian(void) {
 const char*	default_target = "a.out";
 
 static void	seed_fuzz(void) {
+#ifdef DO_FUZZING
 	struct timeval time_now = {};
 	gettimeofday(&time_now, NULL);
 	unsigned int seed = (time_now.tv_sec * 1000) + (time_now.tv_usec / 1000);
 	// seed = 664490666;
 	DEBUGWARN("SEED: %u", seed);
 	srand(seed);
+#endif
 }
 
 int main(int argc, char** argv) {

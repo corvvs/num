@@ -99,13 +99,13 @@ bool	detect_header(const t_master* m, t_analysis* analysis) {
 	// [e_ident チェック]
 	if (!check_elf_ident_consistency(e_ident)) {
 		// ELFとして識別できない場合はこの時点でエラーとする
-		print_recoverable_file_error_by_message(m, target->path, "file format not recognized");
+		print_recoverable_file_error_by_message(m, target->path, "file format not recognized1");
 		return false;
 	}
 	// [ELFのエンディアンを取得]
 	analysis->endian = get_elf_endian(e_ident);
 	if (analysis->endian == END_UNKNOWN) {
-		print_recoverable_file_error_by_message(m, target->path, "file format not recognized");
+		print_recoverable_file_error_by_message(m, target->path, "file format not recognized2");
 		return false;
 	}
 	analysis->system_endian = m->system_endian;
@@ -120,11 +120,11 @@ bool	detect_header(const t_master* m, t_analysis* analysis) {
 			map_elf64_header(analysis, target->head_addr, &analysis->header);
 			break;
 		default:
-			print_recoverable_file_error_by_message(m, target->path, "file format not recognized");
+			print_recoverable_file_error_by_message(m, target->path, "file format not recognized3");
 			return false;
 	}
 	if (!check_elf_header_consistency(analysis)) {
-		print_recoverable_file_error_by_message(m, target->path, "file format not recognized");
+		print_recoverable_file_error_by_message(m, target->path, "file format not recognized4");
 		return false;
 	}
 	return true;

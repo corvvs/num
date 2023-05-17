@@ -6,13 +6,14 @@ FILES	:=	\
 			file.c\
 			structure_mapping.c\
 			analysis.c\
-			analysis_header.c\
+			detect_header.c\
 			section.c\
 			symbol.c\
 			basic_utils.c\
 			consistency_utils.c\
 			print_utils.c\
 			endian.c\
+			fuzzing.c\
 			names.c\
 			printf.c\
 			assert.c\
