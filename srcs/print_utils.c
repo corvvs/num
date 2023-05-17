@@ -51,8 +51,10 @@ void	print_chars(int fd, char ch, uint64_t n) {
 
 void	debug_print_section(const t_section_unit* section) {
 	(void)section;
-	DEBUGINFO("sec: %zx -> %s(t:%llx)\t%s li:%llu\t%c%c%c%c%c%c%c%c%c%c%c%c%c%c %b\t%s",
+	DEBUGINFO("sec: %zx(%p) %zu -> %s(t:%llx)\t%s li:%llu\t%c%c%c%c%c%c%c%c%c%c%c%c%c%c %b\t%s",
 		section->sec_offset,
+		section->head_addr,
+		section->size,
 		sectiontype_to_name(section->type), section->type,
 		section_category_to_name(section->category),
 		section->link,
@@ -77,7 +79,7 @@ void	debug_print_section(const t_section_unit* section) {
 
 void	debug_print_symbol(const t_symbol_unit* symbol) {
 	(void)symbol;
-	DEBUGOUT("%c bind:%s type:%s\t|%s|\tscat:%s vis:%s shndx:%zu b:%llu t:%llu i:%u addr: %p value: %llx size: %llu",
+	DEBUGOUT("%c bind:%s type:%s\t|%s|\tscat:%s vis:%s shn:%zu b:%llu t:%llu i:%u addr: %p val: %llx sz: %llu n:%p %zu",
 		symbol->symbol_griff,
 		symbinding_to_name(symbol->bind),
 		symtype_to_name(symbol->type),
@@ -90,6 +92,8 @@ void	debug_print_symbol(const t_symbol_unit* symbol) {
 		symbol->info,
 		symbol->address,
 		symbol->value,
-		symbol->size
+		symbol->size,
+		symbol->name,
+		symbol->name_offset
 	);
 }

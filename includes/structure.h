@@ -75,11 +75,6 @@ typedef struct s_symbol_unit {
 	uint64_t	value;
 	uint64_t	size;
 	uint64_t	visibility;
-
-	bool		is_debug;     // デバッグシンボルかどうか(-a)
-	bool		is_global;    // 外部シンボルかどうか(-g)
-	bool		is_undefined; // 未定義シンボルかどうか(-u)
-
 	const struct s_section_unit*	relevant_section;
 } t_symbol_unit;
 
