@@ -34,6 +34,15 @@ static bool is_region_within_another(
 static bool	is_sec_within_mmapped_region(const t_analysis* analysis, const t_section_unit* section) {
 	// DEBUGOUT("ELF: [%p, %p)", analysis->target.head_addr, analysis->target.head_addr + analysis->target.size);
 	// DEBUGOUT("sec: [%p, %p)", section->head_addr, section->head_addr + section->size);
+	// DEBUGOUT("offset: %zu(%zx), size: %zu(%zx)", 
+	// 	section->head_addr - analysis->target.head_addr, 
+	// 	section->head_addr - analysis->target.head_addr,
+	// 	section->size, section->size);
+	// DEBUGOUT("is nobits: %d", section->type == SHT_NOBITS);
+	if (section->type == SHT_NOBITS) {
+		return analysis->target.head_addr <= section->head_addr
+			&& section->head_addr < analysis->target.head_addr + analysis->target.size;
+	}
 	return is_region_within_another(section->head_addr, section->size, analysis->target.head_addr, analysis->target.size);
 }
 
