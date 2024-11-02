@@ -273,17 +273,17 @@ void	determine_symbol_griff(const t_master* m, const t_analysis* analysis, t_sym
 			if (symbol->relevant_section != NULL) {
 				switch (symbol->relevant_section->category) {
 					case SC_GOT: {
-						switch (symbol->bind) {
-							case STB_GLOBAL:
-								// グローバルなGOTシンボル
-								symbol->symbol_griff = 'G';
-								return;
-							case STB_LOCAL:
-								// ローカルなGOTシンボル
-								symbol->symbol_griff = 'g';
-								return;
-						}
-						break;
+						// switch (symbol->bind) {
+						// 	case STB_GLOBAL:
+						// 		// グローバルなGOTシンボル
+						// 		symbol->symbol_griff = 'G';
+						// 		return;
+						// 	case STB_LOCAL:
+						// 		// ローカルなGOTシンボル
+						// 		symbol->symbol_griff = 'g';
+						// 		return;
+						// }
+						// break;
 					}
 					case SC_DATA: {
 						switch (symbol->bind) {
