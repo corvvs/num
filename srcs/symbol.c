@@ -30,7 +30,7 @@ bool	determine_symbol_name(
 			symbol->name = "(null)";
 		}
 	}
-	if (symbol->name != NULL && *symbol->name >= 128) {
+	if (symbol->name != NULL && *symbol->name < 0) {
 		return false;
 	}
 	return true;
